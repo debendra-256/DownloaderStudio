@@ -55,8 +55,8 @@ function App() {
         alert("Error: " + data.error);
       }
     } catch (e) {
-      console.error(e);
-      alert("Failed to connect to backend.");
+      console.error("Backend connection error:", e);
+      alert(`Failed to connect to backend at ${API_BASE}/api/analyze. Error: ${e.message}`);
     } finally {
       setIsLoading(false);
     }

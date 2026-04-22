@@ -31,11 +31,6 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 const clientBuildPath = path.join(__dirname, '../../client/dist');
 if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
-  app.get('(.*)', (req, res, next) => {
-    // Only serve index.html for non-API routes
-    if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-  });
 }
 
 const videoService = require('./services/videoService');
@@ -279,6 +274,18 @@ app.post('/api/clone-voice', upload.single('sample'), async (req, res) => {
 });
 
 
+
+// Health check for deployment monitoring
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date(), port: PORT });
+});
+
+// Final catch-all for frontend
+if (fs.existsSync(clientBuildPath)) {
+  app.get('(.*)', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[Server] Booting in ${process.env.NODE_ENV || 'development'} mode`);
