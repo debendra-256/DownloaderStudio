@@ -31,7 +31,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 const clientBuildPath = path.join(__dirname, '../../client/dist');
 if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
-  app.get('(.*)', (req, res, next) => {
+  app.get('*', (req, res, next) => {
     // Only serve index.html for non-API routes
     if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(clientBuildPath, 'index.html'));
@@ -280,6 +280,8 @@ app.post('/api/clone-voice', upload.single('sample'), async (req, res) => {
 
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Server] Booting in ${process.env.NODE_ENV || 'development'} mode`);
+  console.log(`[Server] Port: ${PORT}`);
+  console.log(`[Server] Startup successful. Listening on 0.0.0.0:${PORT}`);
 });
