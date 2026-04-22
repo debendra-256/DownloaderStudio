@@ -10,6 +10,7 @@ function App() {
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingType, setLoadingType] = useState('');
+  const [activeLoadingId, setActiveLoadingId] = useState(null);
   const [videoData, setVideoData] = useState(null);
   const [transcription, setTranscription] = useState('');
   const [aiNote, setAiNote] = useState('');
@@ -59,6 +60,7 @@ function App() {
       alert(`Failed to connect to backend at ${API_BASE}/api/analyze. Error: ${e.message}`);
     } finally {
       setIsLoading(false);
+      setActiveLoadingId(null);
     }
   };
 
@@ -66,6 +68,7 @@ function App() {
     if (!url) return;
     setIsLoading(true);
     setLoadingType('downloading');
+    setActiveLoadingId(formatId);
     try {
       // null = let backend auto-select best MP4-compatible (H.264 + M4A)
       // combined spec (contains + or /) = pass through as-is
@@ -97,6 +100,7 @@ function App() {
       alert("Failed to connect to backend.");
     } finally {
       setIsLoading(false);
+      setActiveLoadingId(null);
     }
   };
 
@@ -134,6 +138,7 @@ function App() {
       console.error(e);
     } finally {
       setIsLoading(false);
+      setActiveLoadingId(null);
     }
   };
 
@@ -645,7 +650,7 @@ function App() {
                                     onClick={() => handleDownloadFormat(f.format_id)}
                                     disabled={isLoading}
                                   >
-                                    {isLoading && loadingType === 'downloading' ? 'LOADING...' : 'DOWNLOAD'}
+                                    {isLoading && activeLoadingId === f.format_id ? 'LOADING...' : 'DOWNLOAD'}
                                   </button>
                                 </td>
                               </tr>

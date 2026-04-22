@@ -110,11 +110,12 @@ exports.downloadVideo = async (url, outputDir, formatId = null) => {
       let resolvedFormat;
       if (!formatId || formatId === 'best' || formatId === 'bestvideo+bestaudio/best') {
         resolvedFormat = 'bestvideo+bestaudio/best';
-      } else if (!formatId.includes('+') && !formatId.includes('/')) {
-        // Specific format ID requested: merge with bestaudio
-        resolvedFormat = `${formatId}+bestaudio/${formatId}`;
-      } else {
+      } else if (formatId.includes('+') || formatId.includes('/')) {
         resolvedFormat = formatId;
+      } else {
+        // For specific IDs, try to merge with audio only if it's a video-only stream
+        // Otherwise just use the ID as-is (common for social media combined streams)
+        resolvedFormat = `${formatId}+bestaudio/${formatId}`;
       }
 
       const ytdlpOptions = {
