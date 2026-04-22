@@ -4,6 +4,8 @@ import { jsPDF } from "jspdf";
 import saveAs from 'file-saver';
 import * as XLSX from 'xlsx';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 function App() {
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +37,7 @@ function App() {
     setIsLoading(true);
     setLoadingType('downloading');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/analyze`, {
+      const response = await fetch(`${API_BASE}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
@@ -68,7 +70,7 @@ function App() {
       // null = let backend auto-select best MP4-compatible (H.264 + M4A)
       // combined spec (contains + or /) = pass through as-is
       // plain format ID (e.g. '137') = combine with best M4A audio for merged MP4
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/download`, {
+      const response = await fetch(`${API_BASE}/api/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, formatId: formatId || null })
@@ -86,7 +88,7 @@ function App() {
         }
         
         // Trigger browser download
-        saveAs(`${import.meta.env.VITE_API_URL}${data.videoUrl}`, downloadName);
+        saveAs(`${API_BASE}${data.videoUrl}`, downloadName);
       } else {
         alert("Error downloading: " + data.error);
       }
@@ -111,7 +113,7 @@ function App() {
     setIsLoading(true);
     setLoadingType('audio-download');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/audio-only`, {
+      const response = await fetch(`${API_BASE}/api/audio-only`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
@@ -124,7 +126,7 @@ function App() {
         } else {
            downloadName = (videoData && videoData.title) ? `${videoData.title}.mp3` : "audio.mp3";
         }
-        saveAs(`${import.meta.env.VITE_API_URL}${data.audioUrl}`, downloadName);
+        saveAs(`${API_BASE}${data.audioUrl}`, downloadName);
       } else {
         alert("Error downloading audio: " + data.error);
       }
@@ -152,7 +154,7 @@ function App() {
     }, 800);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/transcribe`, {
+      const response = await fetch(`${API_BASE}/api/transcribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, targetLanguage: lang })
@@ -183,7 +185,7 @@ function App() {
     setIsLoading(true);
     setLoadingType('note');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/generate-study-note`, {
+      const response = await fetch(`${API_BASE}/api/generate-study-note`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcription })
@@ -207,14 +209,14 @@ function App() {
     setIsLoading(true);
     setLoadingType('audio');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/generate-audio`, {
+      const response = await fetch(`${API_BASE}/api/generate-audio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: textToSpeak, voiceConfig })
       });
       const data = await response.json();
       if (data.success) {
-        setGeneratedAudio(`${import.meta.env.VITE_API_URL}${data.audioUrl}`);
+        setGeneratedAudio(`${API_BASE}${data.audioUrl}`);
       } else {
         alert("Error generating audio.");
       }
@@ -236,7 +238,7 @@ function App() {
     formData.append('sample', cloneAudioFile);
     formData.append('name', cloneName);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/clone-voice`, {
+      const response = await fetch(`${API_BASE}/api/clone-voice`, {
         method: 'POST',
         body: formData,
       });
@@ -260,14 +262,14 @@ function App() {
     setLoadingType('preview');
     try {
       const demoText = "नमस्ते, यह एक डेमो है। ନ୍ମସ୍କାର୍, ମୁଁ ଏବେ ଓଡିଆରେ କଥା କହିପାରେ।";
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/generate-audio`, {
+      const response = await fetch(`${API_BASE}/api/generate-audio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: demoText, voiceConfig })
       });
       const data = await response.json();
       if (data.success) {
-        const audio = new Audio(`${import.meta.env.VITE_API_URL}${data.audioUrl}`);
+        const audio = new Audio(`${API_BASE}${data.audioUrl}`);
         audio.play();
       } else {
         alert("Error generating preview.");
@@ -295,7 +297,7 @@ function App() {
       const imgFolder = zip.folder("images");
       for (let i = 0; i < images.length; i++) {
         try {
-          const imgUrl = `${import.meta.env.VITE_API_URL}${images[i]}`;
+          const imgUrl = `${API_BASE}${images[i]}`;
           const response = await fetch(imgUrl);
           const blob = await response.blob();
           imgFolder.file(`frame_${i + 1}.jpg`, blob);
@@ -469,7 +471,7 @@ function App() {
             <div className="search-container">
               <input
                 type="text"
-                placeholder="Paste video URL here..."
+                placeholder="Paste YouTube, Instagram, or X URL here..."
                 className="pill-input"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -503,7 +505,7 @@ function App() {
             <div className="search-container">
               <input
                 type="text"
-                placeholder="Paste video URL for AI analysis..."
+                placeholder="Paste YouTube, Instagram, or X URL for AI analysis..."
                 className="pill-input"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -591,7 +593,7 @@ function App() {
                           <video 
                             controls 
                             autoPlay
-                            src={`${import.meta.env.VITE_API_URL}${videoData.videoUrl}`} 
+                            src={`${API_BASE}${videoData.videoUrl}`} 
                             className="video-preview-img"
                           />
                         ) : (
@@ -653,7 +655,7 @@ function App() {
                           <button 
                             className="download-btn" 
                             style={{ width: '100%', background: '#ffeb3b', color: '#000' }}
-                            onClick={() => saveAs(`${import.meta.env.VITE_API_URL}${videoData.videoUrl}`, "video.mp4")}
+                            onClick={() => saveAs(`${API_BASE}${videoData.videoUrl}`, "video.mp4")}
                           >
                              🔥 DOWNLOAD FILE TO DEVICE
                           </button>

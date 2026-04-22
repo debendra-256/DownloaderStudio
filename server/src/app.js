@@ -27,10 +27,16 @@ if (!fs.existsSync(path.join(__dirname, '../uploads'))) {
 // Serve uploaded/downloaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Basic route
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Video Transform API is running' });
-});
+// Serve frontend build
+const clientBuildPath = path.join(__dirname, '../../client/dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res, next) => {
+    // Only serve index.html for non-API routes
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 const videoService = require('./services/videoService');
 const aiService = require('./services/aiService');
