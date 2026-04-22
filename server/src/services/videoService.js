@@ -20,7 +20,14 @@ if (!fs.existsSync(ytdlpPath)) {
 exports.getVideoInfo = async (url) => {
   try {
     const isTwitter = url.includes('twitter.com') || url.includes('x.com');
-    const referer = isTwitter ? 'https://x.com/' : 'https://www.youtube.com/';
+    const isFB = url.includes('facebook.com') || url.includes('fb.watch');
+    const isInsta = url.includes('instagram.com');
+    
+    let referer = 'https://www.google.com/';
+    if (isTwitter) referer = 'https://x.com/';
+    else if (isFB) referer = 'https://www.facebook.com/';
+    else if (isInsta) referer = 'https://www.instagram.com/';
+    else if (url.includes('youtube.com') || url.includes('youtu.be')) referer = 'https://www.youtube.com/';
     
     const info = await ytdlp(url, {
       dumpJson: true,
@@ -28,6 +35,7 @@ exports.getVideoInfo = async (url) => {
       noWarnings: true,
       noPlaylist: true,
       youtubeSkipDashManifest: true,
+      extractorArgs: 'youtube:player_client=android,ios,web',
       addHeader: [
         'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language: en-US,en;q=0.9',
@@ -78,7 +86,14 @@ exports.downloadVideo = async (url, outputDir, formatId = null) => {
       console.log('Starting download for URL:', url, 'Format:', formatId || 'auto');
       
       const isTwitter = url.includes('twitter.com') || url.includes('x.com');
-      const referer = isTwitter ? 'https://x.com/' : 'https://www.youtube.com/';
+      const isFB = url.includes('facebook.com') || url.includes('fb.watch');
+      const isInsta = url.includes('instagram.com');
+      
+      let referer = 'https://www.google.com/';
+      if (isTwitter) referer = 'https://x.com/';
+      else if (isFB) referer = 'https://www.facebook.com/';
+      else if (isInsta) referer = 'https://www.instagram.com/';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) referer = 'https://www.youtube.com/';
 
       let resolvedFormat;
       if (!formatId || formatId === 'best' || formatId === 'bestvideo+bestaudio/best') {
@@ -148,7 +163,14 @@ exports.downloadAudioOnly = async (url, outputDir) => {
       const outputTemplate = path.join(outputDir, `%(title)s_[${uid}].%(ext)s`);
 
       const isTwitter = url.includes('twitter.com') || url.includes('x.com');
-      const referer = isTwitter ? 'https://x.com/' : 'https://www.youtube.com/';
+      const isFB = url.includes('facebook.com') || url.includes('fb.watch');
+      const isInsta = url.includes('instagram.com');
+      
+      let referer = 'https://www.google.com/';
+      if (isTwitter) referer = 'https://x.com/';
+      else if (isFB) referer = 'https://www.facebook.com/';
+      else if (isInsta) referer = 'https://www.instagram.com/';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) referer = 'https://www.youtube.com/';
 
       ytdlp(url, {
         output: outputTemplate,
