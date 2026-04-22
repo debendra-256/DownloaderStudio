@@ -117,7 +117,7 @@ exports.downloadVideo = async (url, outputDir, formatId = null) => {
         resolvedFormat = formatId;
       }
 
-      ytdlp(url, {
+      const ytdlpOptions = {
         output: outputTemplate,
         format: resolvedFormat,
         ffmpegLocation: ffmpegStatic,
@@ -125,13 +125,20 @@ exports.downloadVideo = async (url, outputDir, formatId = null) => {
         noWarnings: true,
         noPlaylist: true,
         youtubeSkipDashManifest: true,
+        extractorArgs: 'youtube:player_client=android,ios,web',
         addHeader: [
           'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
           'Accept-Language: en-US,en;q=0.9',
           `Referer: ${referer}`,
           'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
         ]
-      }).then(() => {
+      };
+
+      if (fs.existsSync(cookiesPath)) {
+        ytdlpOptions.cookiefile = cookiesPath;
+      }
+
+      ytdlp(url, ytdlpOptions).then(() => {
         // Scan for the file containing the UID indicator
         const actualFilename = (() => {
           const files = fs.readdirSync(outputDir).filter(fn =>
@@ -184,7 +191,7 @@ exports.downloadAudioOnly = async (url, outputDir) => {
       else if (isInsta) referer = 'https://www.instagram.com/';
       else if (url.includes('youtube.com') || url.includes('youtu.be')) referer = 'https://www.youtube.com/';
 
-      ytdlp(url, {
+      const ytdlpOptions = {
         output: outputTemplate,
         format: 'bestaudio/best', // fallback to best if no separate audio stream
         extractAudio: true,
@@ -193,13 +200,20 @@ exports.downloadAudioOnly = async (url, outputDir) => {
         noCheckCertificates: true,
         noWarnings: true,
         youtubeSkipDashManifest: true,
+        extractorArgs: 'youtube:player_client=android,ios,web',
         addHeader: [
           'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
           'Accept-Language: en-US,en;q=0.9',
           `Referer: ${referer}`,
           'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
         ]
-      }).then(() => {
+      };
+
+      if (fs.existsSync(cookiesPath)) {
+        ytdlpOptions.cookiefile = cookiesPath;
+      }
+
+      ytdlp(url, ytdlpOptions).then(() => {
         // Find the actual mp3 file written
         const actualFilename = (() => {
           const files = fs.readdirSync(outputDir).filter(fn =>
