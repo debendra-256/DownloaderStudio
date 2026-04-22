@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "npx vite",
-    "postinstall": "node -e \"if(process.platform !== 'win32') require('child_process').execSync('chmod +x ./node_modules/.bin/vite')\"",
+    "postinstall": "node -e \"if(process.platform !== 'win32') { try { require('child_process').execSync('chmod +x ./node_modules/.bin/vite') } catch(e) {} }\"",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -19,9 +19,7 @@
     "jszip": "^3.10.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
+    "xlsx": "^0.18.5",
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.0.0"
   }
