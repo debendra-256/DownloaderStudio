@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "postinstall": "node -e \"try { require('yt-dlp-exec').download() } catch(e) { console.log('yt-dlp download skipped or failed') }\""
   },
   "keywords": [],
   "author": "",

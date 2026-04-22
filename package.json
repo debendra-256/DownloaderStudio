@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "postinstall": "cd client && npm install && cd ../server && npm install",
-    "build": "cd client && npm run build",
-    "start": "cd server && node src/app.js"
+    "postinstall": "npm install --prefix client && npm install --prefix server",
+    "build": "npm run build --prefix client",
+    "start": "node server/src/app.js"
   },
   "dependencies": {
     "express": "^4.19.2",
