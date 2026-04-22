@@ -8,10 +8,16 @@ const fs = require('fs');
 ffmpeg.setFfmpegPath(ffmpegStatic);
 ffmpeg.setFfprobePath(ffprobeStatic.path);
 
-// Log yt-dlp path for debugging on Render
+// Paths for binaries and cookies
 const ytdlpPath = path.join(__dirname, '../../node_modules/yt-dlp-exec/bin/yt-dlp');
+const cookiesPath = path.join(__dirname, '../../cookies.txt');
+
 if (!fs.existsSync(ytdlpPath)) {
   console.log(`[Warning] yt-dlp binary not found at ${ytdlpPath}. Trying to resolve via package...`);
+}
+
+if (fs.existsSync(cookiesPath)) {
+  console.log(`[Info] cookies.txt found at ${cookiesPath}. Using it for authentication.`);
 }
 
 /**
@@ -29,7 +35,7 @@ exports.getVideoInfo = async (url) => {
     else if (isInsta) referer = 'https://www.instagram.com/';
     else if (url.includes('youtube.com') || url.includes('youtu.be')) referer = 'https://www.youtube.com/';
     
-    const info = await ytdlp(url, {
+    const ytdlpOptions = {
       dumpJson: true,
       noCheckCertificates: true,
       noWarnings: true,
@@ -42,7 +48,13 @@ exports.getVideoInfo = async (url) => {
         `Referer: ${referer}`,
         'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
       ]
-    });
+    };
+
+    if (fs.existsSync(cookiesPath)) {
+      ytdlpOptions.cookiefile = cookiesPath;
+    }
+
+    const info = await ytdlp(url, ytdlpOptions);
 
     // Curate formats: include some with both v+a, or just good ones
     const formats = info.formats
