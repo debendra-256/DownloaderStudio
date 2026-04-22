@@ -8,6 +8,12 @@ const fs = require('fs');
 ffmpeg.setFfmpegPath(ffmpegStatic);
 ffmpeg.setFfprobePath(ffprobeStatic.path);
 
+// Log yt-dlp path for debugging on Render
+const ytdlpPath = path.join(__dirname, '../../node_modules/yt-dlp-exec/bin/yt-dlp');
+if (!fs.existsSync(ytdlpPath)) {
+  console.log(`[Warning] yt-dlp binary not found at ${ytdlpPath}. Trying to resolve via package...`);
+}
+
 /**
  * Fetches video metadata and available formats without downloading
  */
