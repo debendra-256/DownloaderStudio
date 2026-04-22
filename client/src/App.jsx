@@ -4,7 +4,7 @@ import { jsPDF } from "jspdf";
 import saveAs from 'file-saver';
 import * as XLSX from 'xlsx';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = ''; // Use relative paths. Vite proxy handles local dev, same-origin handles production.
 
 function App() {
   const [url, setUrl] = useState('');
