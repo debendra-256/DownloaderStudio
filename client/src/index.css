@@ -650,6 +650,12 @@ input:checked + .slider::before {
     text-align: center;
   }
 
+  .button-group-mobile {
+    width: 100%;
+    flex-direction: row !important; /* Force side-by-side but allow wrapping */
+    gap: 0.5rem !important;
+  }
+
   .video-info-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;

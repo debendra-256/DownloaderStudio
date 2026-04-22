@@ -309,6 +309,11 @@ function App() {
   };
 
   const startRecording = async () => {
+    // Check for mobile/browser support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      alert("Screen recording is only supported on Desktop browsers (Chrome, Edge, Firefox). Mobile browsers do not allow screen capture for security reasons.");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
@@ -471,27 +476,29 @@ function App() {
             <div className="search-container">
               <input
                 type="text"
-                placeholder="Paste YouTube, Instagram, or X URL here..."
+                placeholder="Paste URL here..."
                 className="pill-input"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                style={{ width: '100%', paddingRight: '2rem' }}
+                style={{ width: '100%', paddingRight: '1rem' }}
               />
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
+            <div className="button-group-mobile" style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button 
                 className="download-btn audio-btn" 
                 onClick={() => handleLoadMedia('audio')} 
                 disabled={isLoading}
+                style={{ flex: '1', minWidth: '160px' }}
               >
-                <span style={{ fontSize: '1.2rem' }}>🎵</span> DOWNLOAD AUDIO
+                <span style={{ fontSize: '1.2rem' }}>🎵</span> AUDIO
               </button>
               <button 
                 className="download-btn" 
                 onClick={() => handleLoadMedia('video')} 
                 disabled={isLoading}
+                style={{ flex: '1', minWidth: '160px' }}
               >
-                <span style={{ fontSize: '1.2rem' }}>🎬</span> DOWNLOAD VIDEO
+                <span style={{ fontSize: '1.2rem' }}>🎬</span> VIDEO
               </button>
             </div>
           </>
