@@ -3,6 +3,18 @@ import JSZip from 'jszip';
 import { jsPDF } from "jspdf";
 import saveAs from 'file-saver';
 import * as XLSX from 'xlsx';
+import { BrowserRouter as Router, Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
+import Dashboard from './Dashboard';
+import Downloader from './Downloader';
+import ScreenRecorder from './ScreenRecorder';
+import QRCodeGenerator from './QRCodeGenerator';
+import WatermarkEditor from './WatermarkEditor';
+import EMICalculator from './EMICalculator';
+import ImageCompressor from './ImageCompressor';
+import HowToUse from './HowToUse';
+import VideoToMP3 from './VideoToMP3';
+import './Dashboard.css';
 
 const API_BASE = ''; // Use relative paths. Vite proxy handles local dev, same-origin handles production.
 
@@ -21,7 +33,7 @@ function App() {
   const [customVoices, setCustomVoices] = useState([]);
   const [images, setImages] = useState([]);
   const [targetLanguage, setTargetLanguage] = useState('English');
-  const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'ai-notes'
+  // Removed currentPage state, using URL routing instead
   const [cloneAudioFile, setCloneAudioFile] = useState(null);
   const [cloneName, setCloneName] = useState('');
   const [progress, setProgress] = useState(0);
@@ -340,7 +352,10 @@ function App() {
         const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
         
-        let fileName = recordingName || `screen-recording-${new Date().getTime()}`;
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        let fileName = recordingName ? recordingName.trim() : `Screen_Recording_${timestamp}`;
         if (!fileName.endsWith('.webm')) fileName += '.webm';
 
         const a = document.createElement('a');
@@ -400,7 +415,10 @@ function App() {
       const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
       const url = URL.createObjectURL(blob);
 
-      let fileName = recordingName || `screen-recording-${Date.now()}`;
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      let fileName = recordingName ? recordingName.trim() : `Screen_Recording_${timestamp}`;
       if (!fileName.endsWith('.webm')) fileName += '.webm';
 
       const a = document.createElement('a');
@@ -431,6 +449,67 @@ function App() {
   };
 
   return (
+    <Router>
+      <AppContent 
+        url={url} setUrl={setUrl}
+        isLoading={isLoading} setIsLoading={setIsLoading}
+        loadingType={loadingType} setLoadingType={setLoadingType}
+        activeLoadingId={activeLoadingId} setActiveLoadingId={setActiveLoadingId}
+        videoData={videoData} setVideoData={setVideoData}
+        transcription={transcription} setTranscription={setTranscription}
+        aiNote={aiNote} setAiNote={setAiNote}
+        studyNote={studyNote} setStudyNote={setStudyNote}
+        voiceConfig={voiceConfig} setVoiceConfig={setVoiceConfig}
+        generatedAudio={generatedAudio} setGeneratedAudio={setGeneratedAudio}
+        videoAudioUrl={videoAudioUrl} setVideoAudioUrl={setVideoAudioUrl}
+        customVoices={customVoices} setCustomVoices={setCustomVoices}
+        images={images} setImages={setImages}
+        targetLanguage={targetLanguage} setTargetLanguage={setTargetLanguage}
+        cloneAudioFile={cloneAudioFile} setCloneAudioFile={setCloneAudioFile}
+        cloneName={cloneName} setCloneName={setCloneName}
+        progress={progress} setProgress={setProgress}
+        isRecording={isRecording} setIsRecording={setIsRecording}
+        audioEnabled={audioEnabled} setAudioEnabled={setAudioEnabled}
+        recordingName={recordingName} setRecordingName={setRecordingName}
+        mediaType={mediaType} setMediaType={setMediaType}
+        handleLoadMedia={handleLoadMedia}
+        handleDownloadFormat={handleDownloadFormat}
+        handleDownloadAudioOriginal={handleDownloadAudioOriginal}
+        handleTranscribe={handleTranscribe}
+        handleCreateStudyNote={handleCreateStudyNote}
+        handleCreateAudio={handleCreateAudio}
+        handleCloneVoice={handleCloneVoice}
+        handlePreviewVoice={handlePreviewVoice}
+        downloadPdf={downloadPdf}
+        handleExportZip={handleExportZip}
+        startRecording={startRecording}
+        stopRecording={stopRecording}
+        formatSize={formatSize}
+      />
+    </Router>
+  );
+}
+
+function AppContent({ 
+  url, setUrl, isLoading, setIsLoading, loadingType, setLoadingType, 
+  activeLoadingId, setActiveLoadingId, videoData, setVideoData, 
+  transcription, setTranscription, aiNote, setAiNote, studyNote, setStudyNote,
+  voiceConfig, setVoiceConfig, generatedAudio, setGeneratedAudio, 
+  videoAudioUrl, setVideoAudioUrl, customVoices, setCustomVoices, 
+  images, setImages, targetLanguage, setTargetLanguage,
+  cloneAudioFile, setCloneAudioFile, cloneName, setCloneName, 
+  progress, setProgress, isRecording, setIsRecording, 
+  audioEnabled, setAudioEnabled, recordingName, setRecordingName, 
+  mediaType, setMediaType, handleLoadMedia, handleDownloadFormat, 
+  handleDownloadAudioOriginal, handleTranscribe, handleCreateStudyNote, 
+  handleCreateAudio, handleCloneVoice, handlePreviewVoice, 
+  downloadPdf, handleExportZip, startRecording, stopRecording, formatSize
+}) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPage = location.pathname === '/' ? 'dashboard' : location.pathname.substring(1);
+
+  return (
     <div className="app-container">
       {progress > 0 && (
         <div className="progress-beam-container">
@@ -459,322 +538,148 @@ function App() {
       )}
 
       <nav className="navbar">
-        <div className="logo-brand" onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer' }}>
+        <div className="logo-brand" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           <span className="logo-vids">Downloader</span>
           <span className="logo-save">Studio.ai</span>
         </div>
         <ul className="nav-links">
-          <li onClick={() => setCurrentPage('home')} style={{ cursor: 'pointer', color: currentPage === 'home' ? 'var(--accent-green)' : 'white' }}>HOME</li>
-          <li onClick={() => setCurrentPage('ai-notes')} style={{ cursor: 'pointer', color: currentPage === 'ai-notes' ? 'var(--accent-green)' : 'white' }}>AI VIDEO NOTES</li>
-          <li>API</li>
+          <li className="nav-item-dropdown">
+            <span className="nav-dropdown-trigger" style={{color: '#1e293b'}}>
+              Products <ChevronDown size={16} />
+            </span>
+            <div className="nav-dropdown-menu">
+              <div className="nav-dropdown-grid">
+                <div className="nav-dropdown-group">
+                  <h4>Video & Audio</h4>
+                  <NavLink to="/home" className="dropdown-link" onClick={() => navigate('/home')}>Media Downloader</NavLink>
+                  <NavLink to="/video-to-mp3" className="dropdown-link" onClick={() => navigate('/video-to-mp3')}>Video to MP3</NavLink>
+                  <NavLink to="/screen-recorder" className="dropdown-link" onClick={() => navigate('/screen-recorder')}>Screen Recorder</NavLink>
+                  <NavLink to="/watermark" className="dropdown-link" onClick={() => navigate('/watermark')}>Watermark Studio</NavLink>
+                </div>
+                <div className="nav-dropdown-group">
+                  <h4>AI & Utility</h4>
+                  <NavLink to="/ai-notes" className="dropdown-link" onClick={() => navigate('/ai-notes')}>AI Video Notes</NavLink>
+                  <NavLink to="/img-compressor" className="dropdown-link" onClick={() => navigate('/img-compressor')}>Image Compressor</NavLink>
+                  <NavLink to="/emi-calculator" className="dropdown-link" onClick={() => navigate('/emi-calculator')}>EMI Calculator</NavLink>
+                  <NavLink to="/qr-generator" className="dropdown-link" onClick={() => navigate('/qr-generator')}>QR Generator</NavLink>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li><NavLink to="/" style={({ isActive }) => ({ color: isActive ? '#0277bd' : '#1e293b' })}>Tools Hub</NavLink></li>
+          <li><NavLink to="/how-to-use" style={({ isActive }) => ({ color: isActive ? '#0277bd' : '#1e293b' })}>Guide</NavLink></li>
+          <li><span style={{color: '#1e293b'}}>API</span></li>
         </ul>
+        <div className="nav-actions">
+          <button className="nav-btn-login">Log in</button>
+          <button className="nav-btn-signup">Sign up</button>
+        </div>
       </nav>
 
       <main className="hero-section">
-        {currentPage === 'home' ? (
-          <>
-            <header className="hero">
-              <h1>Transfrom Any video into <span className="highlight">Note or Mp3</span> in a Click.</h1>
-              <p className="hero-subtitle">High-quality YouTube, Instagram, and X/Twitter media processing powered by AI.</p>
-            </header>
+        <Routes>
+          <Route path="/" element={
+            <Dashboard onSelectTool={(toolId) => {
+              if (toolId === 'downloader') navigate('/home');
+              else if (toolId === 'notes-from-v') navigate('/ai-notes');
+              else if (toolId === 'screen-rec') navigate('/screen-recorder');
+              else if (toolId === 'qr-gen') navigate('/qr-generator');
+              else if (toolId === 'add-watermark') navigate('/watermark');
+              else if (toolId === 'emi-calc') navigate('/emi-calculator');
+              else if (toolId === 'v-to-mp3') navigate('/video-to-mp3');
+              else if (toolId === 'img-compress') navigate('/img-compressor');
+              else alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
+            }} />
+          } />
+          <Route path="/tools" element={
+            <Dashboard onSelectTool={(toolId) => {
+              if (toolId === 'downloader') navigate('/home');
+              else if (toolId === 'notes-from-v') navigate('/ai-notes');
+              else if (toolId === 'screen-rec') navigate('/screen-recorder');
+              else if (toolId === 'qr-gen') navigate('/qr-generator');
+              else if (toolId === 'add-watermark') navigate('/watermark');
+              else if (toolId === 'emi-calc') navigate('/emi-calculator');
+              else if (toolId === 'v-to-mp3') navigate('/video-to-mp3');
+              else if (toolId === 'img-compress') navigate('/img-compressor');
+              else alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
+            }} />
+          } />
+          <Route path="/home" element={
+            <Downloader 
+              url={url} setUrl={setUrl} isLoading={isLoading} 
+              handleLoadMedia={handleLoadMedia} videoData={videoData} 
+              activeLoadingId={activeLoadingId} handleDownloadFormat={handleDownloadFormat}
+              handleDownloadAudioOriginal={handleDownloadAudioOriginal}
+              formatSize={formatSize} API_BASE={API_BASE}
+              transcription={transcription} downloadPdf={downloadPdf}
+              handleExportZip={handleExportZip} targetLanguage={targetLanguage}
+              setTargetLanguage={setTargetLanguage} handleTranscribe={handleTranscribe}
+              studyNote={studyNote} aiNote={aiNote} handleCreateStudyNote={handleCreateStudyNote}
+              voiceConfig={voiceConfig} setVoiceConfig={setVoiceConfig}
+              customVoices={customVoices} handlePreviewVoice={handlePreviewVoice}
+              handleCreateAudio={handleCreateAudio} cloneName={cloneName}
+              setCloneName={setCloneName} setCloneAudioFile={setCloneAudioFile}
+              handleCloneVoice={handleCloneVoice} generatedAudio={generatedAudio}
+            />
+          } />
+          <Route path="/screen-recorder" element={
+            <ScreenRecorder 
+              isRecording={isRecording} recordingName={recordingName}
+              setRecordingName={setRecordingName} audioEnabled={audioEnabled}
+              setAudioEnabled={setAudioEnabled} startRecording={startRecording}
+              stopRecording={stopRecording}
+            />
+          } />
+          <Route path="/qr-generator" element={<QRCodeGenerator />} />
+          <Route path="/watermark" element={<WatermarkEditor />} />
+          <Route path="/emi-calculator" element={<EMICalculator />} />
+          <Route path="/video-to-mp3" element={<VideoToMP3 />} />
+          <Route path="/img-compressor" element={<ImageCompressor />} />
+          <Route path="/how-to-use" element={<HowToUse />} />
+          <Route path="/ai-notes" element={
+            <div className="ai-notes-page">
+              <header className="hero">
+                <h1>AI <span className="highlight">Video Intelligence</span> Hub</h1>
+                <p className="hero-subtitle">Generate deep-study notes and transcripts from any video instantly.</p>
+              </header>
 
-            <div className="search-container">
-              <input
-                type="text"
-                placeholder="Paste URL here..."
-                className="pill-input"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                style={{ width: '100%', paddingRight: '1rem' }}
-              />
-            </div>
-            <div className="button-group-mobile" style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button 
-                className="download-btn audio-btn" 
-                onClick={() => handleLoadMedia('audio')} 
-                disabled={isLoading}
-                style={{ flex: '1', minWidth: '160px' }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>🎵</span> AUDIO
-              </button>
-              <button 
-                className="download-btn" 
-                onClick={() => handleLoadMedia('video')} 
-                disabled={isLoading}
-                style={{ flex: '1', minWidth: '160px' }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>🎬</span> VIDEO
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="ai-notes-page">
-            <header className="hero">
-              <h1>AI <span className="highlight">Video Intelligence</span> Hub</h1>
-              <p className="hero-subtitle">Generate deep-study notes and transcripts from any video instantly.</p>
-            </header>
-
-            <div className="search-container">
-              <input
-                type="text"
-                placeholder="Paste YouTube, Instagram, or X URL for AI analysis..."
-                className="pill-input"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-              <button className="download-btn" onClick={() => handleTranscribe()} disabled={isLoading}>
-                {isLoading ? 'ANALYZING...' : 'GENERATE AI NOTES'}
-              </button>
-            </div>
-            
-            {(transcription || aiNote || studyNote) && (
-               <div className="ai-results-container results-card">
-                 <div className="tabs">
-                    <div className="tab active">TRANSCRIPTION & NOTES</div>
-                 </div>
-                 <div className="tab-content" style={{ display: 'block', padding: '2rem' }}>
-                    {aiNote && (
-                      <div className="note-section">
-                        <h3>AI Summary</h3>
-                        <div className="ai-text-box">{aiNote}</div>
-                      </div>
-                    )}
-                    {transcription && (
-                      <div className="note-section" style={{ marginTop: '2rem' }}>
-                        <h3>Full Transcription</h3>
-                        <div className="ai-text-box" style={{ maxHeight: '400px', overflowY: 'auto' }}>{transcription}</div>
-                      </div>
-                    )}
-                 </div>
-               </div>
-            )}
-          </div>
-        )}
-
-        {currentPage === 'home' && (
-          <>
-            {/* Screen Recorder Module */}
-            <div className="recorder-panel animate-premium">
-              <div className="recorder-header">
-                <div className="status-dot-container">
-                  <div className={`status-dot ${isRecording ? 'pulse' : ''}`}></div>
-                  <span>{isRecording ? 'LIVE RECORDING' : 'SCREEN RECORDER'}</span>
-                </div>
-                
-                <div className="recorder-options">
-                  <input 
-                    type="text" 
-                    placeholder="Enter your Recording Name.." 
-                    className="pill-input recorder-name-input"
-                    value={recordingName}
-                    onChange={(e) => setRecordingName(e.target.value)}
-                    disabled={isRecording}
-                  />
-
-                  <label className="switch-label">
-                    <input 
-                      type="checkbox" 
-                      checked={audioEnabled} 
-                      onChange={(e) => setAudioEnabled(e.target.checked)}
-                      disabled={isRecording}
-                    />
-                    <span className="slider"></span>
-                    <span style={{ marginLeft: '10px' }}>{audioEnabled ? 'Audio On' : 'Audio Off'}</span>
-                  </label>
-
-                  {!isRecording ? (
-                    <button className="record-btn start" onClick={startRecording}>
-                      START RECORDING
-                    </button>
-                  ) : (
-                    <button className="record-btn stop" onClick={stopRecording}>
-                      STOP & SAVE
-                    </button>
-                  )}
-                </div>
+              <div className="search-container">
+                <input
+                  type="text"
+                  placeholder="Paste YouTube, Instagram, or X URL for AI analysis..."
+                  className="pill-input"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+                <button className="download-btn" onClick={() => handleTranscribe()} disabled={isLoading}>
+                  {isLoading ? 'ANALYZING...' : 'GENERATE AI NOTES'}
+                </button>
               </div>
-            </div>
-
-            {videoData && (
-              <div className="result-container">
-                <div className="white-card">
-                  <div className="video-info-grid">
-                    <div className="thumbnail-area">
-                      <div className="thumbnail-wrap">
-                        {mediaType === 'video' && videoData.videoUrl && videoData.videoUrl.startsWith('/uploads') ? (
-                          <video 
-                            controls 
-                            autoPlay
-                            src={`${API_BASE}${videoData.videoUrl}`} 
-                            className="video-preview-img"
-                          />
-                        ) : (
-                          <img src={videoData.thumbnail} className="video-preview-img" alt="thumbnail" />
-                        )}
-                      </div>
-                      <div style={{ marginTop: '1rem', display: 'flex', gap: '10px' }}>
-                        <button 
-                          className="download-btn" 
-                          style={{ width: '100%', padding: '0.6rem', background: '#222' }} 
-                          onClick={handleDownloadAudioOriginal}
-                        >
-                           🎵 Download Original Audio
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="info-content">
-                      <h2>{videoData.title || "Detected Video Content"}</h2>
-                      
-                      <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '12px' }}>
-                        <table className="options-table">
-                          <thead>
-                            <tr>
-                              <th>Quality</th>
-                              <th>Format</th>
-                              <th>Size</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {videoData.formats && videoData.formats
-                              .filter(f => f.vcodec && f.vcodec !== 'none') // Only show video formats
-                              .map((f, i) => (
-                              <tr key={i}>
-                                <td>{f.quality || f.resolution}</td>
-                                <td>{f.ext && f.ext.toUpperCase()}</td>
-                                <td>{formatSize(f.filesize)}</td>
-                                <td>
-                                  <button 
-                                    className="table-btn" 
-                                    onClick={() => handleDownloadFormat(f.format_id)}
-                                    disabled={isLoading}
-                                  >
-                                    {isLoading && activeLoadingId === f.format_id ? 'LOADING...' : 'DOWNLOAD'}
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                            {(!videoData.formats || videoData.formats.filter(f => f.vcodec && f.vcodec !== 'none').length === 0) && (
-                              <tr><td colSpan="4">No video formats detected.</td></tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {videoData.videoUrl && videoData.videoUrl.startsWith('/uploads') && (
-                        <div style={{ marginTop: '1rem' }}>
-                          <button 
-                            className="download-btn" 
-                            style={{ width: '100%', background: '#ffeb3b', color: '#000' }}
-                            onClick={() => saveAs(`${API_BASE}${videoData.videoUrl}`, "video.mp4")}
-                          >
-                             🔥 DOWNLOAD FILE TO DEVICE
-                          </button>
+              
+              {(transcription || aiNote || studyNote) && (
+                 <div className="ai-results-container results-card">
+                   <div className="tabs">
+                      <div className="tab active">TRANSCRIPTION & NOTES</div>
+                   </div>
+                   <div className="tab-content" style={{ display: 'block', padding: '2rem' }}>
+                      {aiNote && (
+                        <div className="note-section">
+                          <h3>AI Summary</h3>
+                          <div className="ai-text-box">{aiNote}</div>
                         </div>
                       )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Full Screen AI Intelligence Hub */}
-                {transcription && (
-                  <div className="fullscreen-ai-card animate-premium">
-                    <div className="ai-header">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <h2 style={{ margin: 0, color: '#0277bd', fontSize: '1.8rem' }}>AI Intelligence Hub</h2>
-                        <select 
-                          className="ai-lang-select" 
-                          value={targetLanguage} 
-                          onChange={(e) => {
-                            setTargetLanguage(e.target.value);
-                            handleTranscribe(e.target.value);
-                          }}
-                        >
-                          <option value="English">Translate to English</option>
-                          <option value="Hindi">Translate to Hindi</option>
-                          <option value="Odia">Translate to Odia</option>
-                          <option value="Spanish">Translate to Spanish</option>
-                          <option value="French">Translate to French</option>
-                        </select>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="table-btn" style={{ background: '#f44336', padding: '0.8rem 1.5rem' }} onClick={downloadPdf}>EXPORT PDF</button>
-                        <button className="table-btn" style={{ background: '#0277bd', padding: '0.8rem 1.5rem' }} onClick={handleExportZip}>DOWNLOAD ZIP</button>
-                      </div>
-                    </div>
-
-                    <div className="note-box" style={{ fontSize: '1.1rem', padding: '2rem' }}>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                          <span style={{ fontWeight: 800, fontSize: '1.3rem', color: '#333' }}>Summary & Study Notes</span>
-                          {!studyNote && (
-                            <button className="table-btn" style={{ fontSize: '0.85rem' }} onClick={handleCreateStudyNote}>
-                              REGENERATE INTELLIGENCE
-                            </button>
-                          )}
-                       </div>
-                       {studyNote || aiNote || transcription}
-                    </div>
-
-                    {/* Voice Synthesis Module */}
-                    <div style={{ marginTop: '3rem', padding: '2rem', background: '#f8f9fa', borderRadius: '16px', border: '1px solid #eee' }}>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                          <div style={{ flex: 1 }}>
-                             <h3 style={{ margin: '0 0 0.5rem' }}>Synthetic Audio Foundry</h3>
-                             <p style={{ margin: 0, color: '#666' }}>Engineered vocal synthesis from your generated context.</p>
-                          </div>
-                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                             <select 
-                                className="pill-input" 
-                                style={{ padding: '0.6rem', width: '200px', background: 'white', border: '1px solid #ddd' }}
-                                value={JSON.stringify(voiceConfig)}
-                                onChange={(e) => setVoiceConfig(JSON.parse(e.target.value))}
-                             >
-                                <option value='{"voiceId":"FmBhnvP58BK0vz65OOj7"}'>Viraj (Premium Narrator)</option>
-                                <option value='{"voice":"nova"}'>Nova (Natural Clarity)</option>
-                                {customVoices.map((v, i) => (
-                                  <option key={i} value={JSON.stringify({ voiceId: v.voiceId })}>
-                                    Cloned: {v.name}
-                                  </option>
-                                ))}
-                             </select>
-                             <button className="table-btn" onClick={handlePreviewVoice} style={{ background: '#222', padding: '0.8rem' }}>DEMO</button>
-                             <button className="table-btn" onClick={handleCreateAudio} style={{ background: '#00c853', padding: '0.8rem 1.5rem' }}>GENERATE SPEECH</button>
-                          </div>
-                       </div>
-                       
-                       {/* Voice Cloning Sub-Module */}
-                       <div style={{ marginTop: '2rem', borderTop: '2px dashed #ddd', paddingTop: '2rem' }}>
-                          <h4 style={{ margin: '0 0 1rem', color: '#14b8a6' }}>Quantum Voice Cloning</h4>
-                          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                             <input 
-                               type="text" 
-                               placeholder="Vocal Profile Name" 
-                               className="pill-input" 
-                               style={{ padding: '0.8rem', flex: 1, border: '1px solid #ddd' }}
-                               value={cloneName}
-                               onChange={(e) => setCloneName(e.target.value)}
-                             />
-                             <input 
-                               type="file" 
-                               accept="audio/*" 
-                               style={{ flex: 1 }}
-                               onChange={(e) => setCloneAudioFile(e.target.files[0])}
-                             />
-                             <button className="table-btn" onClick={handleCloneVoice} style={{ background: '#14b8a6' }}>MAP VOICE</button>
-                          </div>
-                       </div>
-
-                       {generatedAudio && (
-                         <audio controls src={generatedAudio} style={{ width: '100%', marginTop: '2rem' }} />
-                       )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
+                      {transcription && (
+                        <div className="note-section" style={{ marginTop: '2rem' }}>
+                          <h3>Full Transcription</h3>
+                          <div className="ai-text-box" style={{ maxHeight: '400px', overflowY: 'auto' }}>{transcription}</div>
+                        </div>
+                      )}
+                   </div>
+                 </div>
+              )}
+            </div>
+          } />
+        </Routes>
       </main>
 
       <footer style={{ textAlign: 'center', padding: '2rem', opacity: 0.8, fontSize: '0.9rem' }}>

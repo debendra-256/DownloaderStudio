@@ -35,6 +35,7 @@ if (fs.existsSync(clientBuildPath)) {
 
 const videoService = require('./services/videoService');
 const aiService = require('./services/aiService');
+const watermarkService = require('./services/watermarkService');
 const { clearUploadFolder } = require('./services/cleanupService');
 
 // Analyze URL and return metadata + formats
@@ -286,6 +287,49 @@ if (fs.existsSync(clientBuildPath)) {
     res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
 }
+
+// Watermarking Route
+app.post('/api/apply-watermark', upload.fields([
+  { name: 'file', maxCount: 1 },
+  { name: 'watermarkImage', maxCount: 1 }
+]), async (req, res) => {
+  console.log('[Server] Watermark request received:', req.body);
+  try {
+    const file = req.files['file'][0];
+    const watermarkImageFile = req.files['watermarkImage'] ? req.files['watermarkImage'][0] : null;
+    const { text, opacity, position } = req.body;
+
+    const inputPath = file.path;
+    const extension = path.extname(file.originalname).toLowerCase();
+    const outputFilename = `watermarked_${Date.now()}${extension}`;
+    const outputPath = path.join(__dirname, '../uploads', outputFilename);
+
+    let resultPath;
+    if (extension === '.pdf') {
+      resultPath = await watermarkService.applyWatermarkToPdf(inputPath, outputPath, {
+        text,
+        opacity,
+        position
+      });
+    } else {
+      resultPath = await watermarkService.applyWatermarkToVideo(inputPath, outputPath, {
+        text,
+        watermarkImage: watermarkImageFile ? watermarkImageFile.path : null,
+        opacity,
+        position
+      });
+    }
+
+    res.json({
+      success: true,
+      fileUrl: `/uploads/${outputFilename}`
+    });
+
+  } catch (error) {
+    console.error('Watermark error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[Server] Booting in ${process.env.NODE_ENV || 'development'} mode`);
