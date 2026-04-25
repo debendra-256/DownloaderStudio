@@ -2,6 +2,9 @@
   "name": "downloader-studio",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "postinstall": "npm install --prefix client && npm install --prefix server",
     "build": "npm run build --prefix client",
