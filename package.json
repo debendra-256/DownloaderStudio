@@ -6,8 +6,9 @@
     "node": "20.x"
   },
   "scripts": {
+    "clean": "node -e \"const fs=require('fs'); fs.rmSync('client/node_modules', {recursive:true, force:true}); fs.rmSync('server/node_modules', {recursive:true, force:true});\"",
     "postinstall": "npm install --prefix client && npm install --prefix server",
-    "build": "npm run build --prefix client",
+    "build": "npm run clean && npm install --prefix client && npm run build --prefix client",
     "start": "node server/src/app.js"
   },
   "dependencies": {
