@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, Type, Image as ImageIcon, Download, CheckCircle, Loader2, ShieldCheck } from 'lucide-react';
 import saveAs from 'file-saver';
 
-const API_BASE = '';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const WatermarkEditor = () => {
   const [file, setFile] = useState(null);
@@ -62,7 +62,7 @@ const WatermarkEditor = () => {
       }
     } catch (err) {
       console.error(err);
-      alert("An error occurred during processing.");
+      alert(`Backend Error: ${err.message}. Please ensure the backend is running and reachable at ${API_BASE || 'the same origin'}. Path: /api/apply-watermark`);
     } finally {
       setIsProcessing(false);
       setTimeout(() => setProgress(0), 1000);

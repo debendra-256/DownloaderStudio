@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Music, Search, Download, RefreshCcw, Headphones, Share2, Globe, Video, Play, Radio } from 'lucide-react';
 import saveAs from 'file-saver';
 
-const API_BASE = ''; // Relative paths
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const VideoToMP3 = () => {
   const [url, setUrl] = useState('');
@@ -44,19 +44,23 @@ const VideoToMP3 = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: `Server returned ${response.status}` }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       if (data.success) {
         setProgress(100);
         setStatus('Ready for download!');
         setAudioResult(data);
       } else {
-        alert("Error converting to MP3: " + data.error);
-        setProgress(0);
-        setStatus('');
+        throw new Error(data.error || 'Conversion failed');
       }
     } catch (e) {
-      console.error(e);
-      alert("Failed to connect to backend. Please check your internet connection.");
+      console.error('VideoToMP3 Error:', e);
+      alert(`Backend Error: ${e.message}. Please ensure the backend is running and reachable at ${API_BASE || 'the same origin'}.`);
       setProgress(0);
       setStatus('');
     } finally {

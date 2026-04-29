@@ -16,7 +16,7 @@ import HowToUse from './HowToUse';
 import VideoToMP3 from './VideoToMP3';
 import './Dashboard.css';
 
-const API_BASE = ''; // Use relative paths. Vite proxy handles local dev, same-origin handles production.
+const API_BASE = import.meta.env.VITE_API_URL || ''; // Use environment variable or relative paths.
 
 function App() {
   const [url, setUrl] = useState('');
@@ -69,7 +69,7 @@ function App() {
       }
     } catch (e) {
       console.error("Backend connection error:", e);
-      alert(`Failed to connect to backend at ${API_BASE}/api/analyze. Error: ${e.message}`);
+      alert(`Backend Error: ${e.message}. Please ensure the backend is running and reachable at ${API_BASE || 'the same origin'}. Path: /api/analyze`);
     } finally {
       setIsLoading(false);
       setActiveLoadingId(null);
@@ -109,7 +109,7 @@ function App() {
       }
     } catch (e) {
       console.error(e);
-      alert("Failed to connect to backend.");
+      alert(`Backend Error: ${e.message}. Path: /api/download`);
     } finally {
       setIsLoading(false);
       setActiveLoadingId(null);
