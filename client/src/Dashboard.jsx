@@ -21,11 +21,12 @@ import {
   Zap, 
   Shield, 
   PlayCircle, 
+  Video,
   HelpCircle
 } from 'lucide-react';
 import './Dashboard.css';
 
-const TOOLS = [
+export const TOOLS = [
   { id: 'age-calc', title: 'Age Calculator', icon: Clock, description: 'Calculate exact age in years, months, and days.' },
   { id: 'emi-calc', title: 'EMI Calculator', icon: Calculator, description: 'Calculate your monthly loan repayments easily.' },
   { id: 'img-compress', title: 'Image Compressor', icon: Image, description: 'Reduce image file size without losing quality.' },
@@ -40,7 +41,7 @@ const TOOLS = [
   { id: 'split-pdf', title: 'Split PDF', icon: Split, description: 'Split a PDF into separate pages or sections.' },
   { id: 'add-watermark', title: 'Add Watermark', icon: Layers, description: 'Protect your content with custom watermarks.' },
   { id: 'notes-from-v', title: 'Video Notes', icon: FilePlus, description: 'Generate AI study notes from any video URL.' },
-  { id: 'sub-gen', title: 'Subtitle Generator', icon: Type, description: 'Automatically generate subtitles for your videos.' },
+  { id: 'meeting', title: 'AI Video Meetings', icon: Video, description: 'Start, record, and schedule professional video meetings.' },
 ];
 
 const ToolCard = ({ title, icon: Icon, description, onClick }) => (
@@ -63,16 +64,6 @@ const Dashboard = ({ onSelectTool }) => {
 
   return (
     <div className="dashboard-container">
-      <div className="search-bar-wrapper">
-        <Search className="search-icon" size={20} />
-        <input 
-          type="text" 
-          placeholder="Search for a tool (e.g. PDF, Video...)" 
-          className="dashboard-search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
 
       <div className="tools-grid">
         {filteredTools.map((tool) => (

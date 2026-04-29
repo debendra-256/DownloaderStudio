@@ -12,126 +12,96 @@ const Downloader = ({
 }) => {
   return (
     <div className="downloader-page animate-premium">
-      <header className="hero">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
-          <div style={{ 
-            background: 'rgba(2, 119, 189, 0.05)', 
-            padding: '1.5rem 3rem', 
-            borderRadius: '24px', 
-            border: '1px solid rgba(2, 119, 189, 0.1)',
-            textAlign: 'center',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <h3 style={{ fontSize: '1rem', color: '#0277bd', marginBottom: '1rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Premium Desktop Experience
-            </h3>
-            <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
-              <button 
-                className="install-link-premium" 
-                onClick={handleInstallApp}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: '#1e293b', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  fontWeight: '600',
-                  fontSize: '0.95rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Google_Chrome_icon_%282022%29.svg" width="20" alt="chrome" />
-                Download Chrome App
-              </button>
-              <div style={{ width: '1px', background: '#e2e8f0' }}></div>
-              <a 
-                href="/DownloaderStudioSetup.exe" 
-                className="install-link-premium"
-                style={{ 
-                  textDecoration: 'none',
-                  color: '#1e293b', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  fontWeight: '600',
-                  fontSize: '0.95rem'
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0078d7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
-                Download Windows EXE
-              </a>
-            </div>
-          </div>
+      <header className="hero" style={{ padding: '6rem 2rem 4rem', background: 'var(--bg-gradient)' }}>
+        <h1 style={{ fontSize: '4.5rem', fontWeight: '800', color: 'var(--zoom-dark)', marginBottom: '1.5rem', letterSpacing: '-1px' }}>
+          Media <span style={{ color: 'var(--zoom-blue)' }}>Downloader.</span>
+        </h1>
+        <p style={{ fontSize: '1.4rem', color: 'var(--zoom-gray)', maxWidth: '800px', margin: '0 auto 4rem', lineHeight: '1.5' }}>
+          High-speed extraction from your favorite platforms. Instantly save video and audio to your device.
+        </p>
+
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Paste your video or post link here..."
+            className="pill-input"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+          <button 
+             className="download-btn"
+             onClick={() => handleLoadMedia('video')}
+             disabled={isLoading}
+          >
+            {isLoading ? '...' : 'Get Started ⚡'}
+          </button>
         </div>
-        <h1 style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>Ultimate <span className="highlight">Media Downloader</span></h1>
-        <p className="hero-subtitle" style={{ fontSize: '1.2rem', color: '#64748b' }}>Download high-quality content from your favorite platforms instantly.</p>
-        
-        <div className="platform-badges" style={{ display: 'flex', gap: '20px', marginTop: '2rem', justifyContent: 'center', opacity: 0.7 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-            YouTube
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#E4405F"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.245 2.242 1.308 3.608.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.062 1.366-.332 2.633-1.308 3.608-.975.975-2.242 1.245-3.608 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.062-2.633-.332-3.608-1.308-.975-.975-1.245-2.242-1.308-3.608-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.062-1.366.332-2.633 1.308-3.608.975-.975 2.242-1.245 3.608-1.308 1.266-.058 1.646-.07 4.85-.07zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
-            Instagram
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            Facebook
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#000000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            X (Twitter)
+
+        <div className="button-group-mobile" style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <button className="quick-action-chip" style={{ background: '#F5F5F7', color: '#1e293b', padding: '0.8rem 1.5rem', borderRadius: '100px', border: '1px solid #E2E2E7' }} onClick={() => handleLoadMedia('audio')}>🎵 MP3 Extract</button>
+          <button className="quick-action-chip" style={{ background: '#F5F5F7', color: '#1e293b', padding: '0.8rem 1.5rem', borderRadius: '100px', border: '1px solid #E2E2E7' }} onClick={() => handleLoadMedia('video')}>🎬 MP4 Video</button>
+        </div>
+
+        {/* Zoom-style Trust Bar */}
+        <div style={{ marginTop: '6rem', borderTop: '1px solid #E2E2E7', paddingTop: '3rem' }}>
+          <p style={{ textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: '800', color: 'var(--zoom-gray)', letterSpacing: '2px', marginBottom: '2rem' }}>Trusted by Industry Leaders</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', opacity: 0.5, filter: 'grayscale(100%)', flexWrap: 'wrap' }}>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" height="24" alt="google" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" height="24" alt="facebook" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" height="24" alt="amazon" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" height="24" alt="netflix" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" height="24" alt="microsoft" />
           </div>
         </div>
       </header>
 
-      <div className="search-container animate-premium" style={{ marginTop: '4rem' }}>
-        <input
-          type="text"
-          placeholder="Paste video or post link here..."
-          className="pill-input"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          style={{ 
-            flex: 1,
-            padding: '1rem 1.5rem', 
-            fontSize: '1.2rem',
-            border: 'none',
-            background: 'transparent',
-            outline: 'none'
-          }}
-        />
-        <button 
-           className="analyze-btn-premium"
-           onClick={() => handleLoadMedia('video')}
-           disabled={isLoading}
-           style={{
-             padding: '1rem 2.5rem',
-             borderRadius: '40px',
-             background: '#1e293b',
-             color: 'white',
-             border: 'none',
-             cursor: 'pointer',
-             fontWeight: '800',
-             fontSize: '1rem',
-             transition: 'all 0.2s ease',
-             display: 'flex',
-             alignItems: 'center',
-             gap: '8px',
-             whiteSpace: 'nowrap'
-           }}
-        >
-          {isLoading ? '...' : 'DOWNLOAD ⚡'}
-        </button>
-      </div>
-
-      <div className="button-group-mobile" style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'center' }}>
-        <button className="quick-action-chip" onClick={() => handleLoadMedia('audio')}>🎵 Extract MP3</button>
-        <button className="quick-action-chip" onClick={() => handleLoadMedia('video')}>🎬 Get MP4</button>
-        <button className="quick-action-chip" onClick={() => { setUrl(''); window.location.href='/ai-notes'; }}>🧠 AI Notes</button>
+      {/* Installer Section (Redesigned for Zoom Theme) */}
+      <div style={{ background: '#F5F5F7', padding: '4rem 2rem' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '2rem' }}>Work from Anywhere</h2>
+          <p style={{ color: 'var(--zoom-gray)', marginBottom: '3rem', fontSize: '1.1rem' }}>Download our desktop client for a faster, more integrated experience.</p>
+          
+          <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+             <button 
+                onClick={handleInstallApp}
+                style={{ 
+                  background: 'var(--zoom-blue)', 
+                  color: 'white', 
+                  padding: '1rem 2.5rem', 
+                  borderRadius: '100px', 
+                  border: 'none', 
+                  fontWeight: '700',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Google_Chrome_icon_%282022%29.svg" width="20" alt="chrome" />
+                Install Chrome App
+              </button>
+              <a 
+                href="/DownloaderStudioSetup.exe" 
+                style={{ 
+                  background: 'white', 
+                  color: 'var(--zoom-dark)', 
+                  padding: '1rem 2.5rem', 
+                  borderRadius: '100px', 
+                  border: '1px solid #E2E2E7', 
+                  fontWeight: '700',
+                  fontSize: '1rem',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+                Download EXE
+              </a>
+          </div>
+        </div>
       </div>
 
       {videoData && (

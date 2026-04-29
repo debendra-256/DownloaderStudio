@@ -1,11 +1,10 @@
 .dashboard-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
-  min-height: calc(100vh - 64px);
-  background: #f8fafc;
-  color: #1e293b;
-  animation: fadeIn 0.8s ease-out;
+  padding: 4rem 2rem;
+  min-height: calc(100vh - 72px);
+  background: var(--white);
+  color: var(--zoom-dark);
 }
 
 .dashboard-header {
@@ -29,20 +28,19 @@
 }
 
 .search-bar-wrapper {
-  max-width: 650px;
-  margin: 0 auto 4rem;
+  max-width: 700px;
+  margin: 0 auto 5rem;
   position: relative;
-  border-radius: 20px;
-  background: white;
-  box-shadow: 0 10px 30px rgba(0, 200, 83, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 100px;
+  background: #F5F5F7;
   transition: all 0.3s ease;
-  border: 1px solid rgba(0, 200, 83, 0.1);
+  border: 1px solid #E2E2E7;
 }
 
 .search-bar-wrapper:focus-within {
-  box-shadow: 0 15px 40px rgba(0, 200, 83, 0.15), 0 1px 5px rgba(0, 200, 83, 0.1);
-  transform: translateY(-2px);
-  border-color: rgba(0, 200, 83, 0.3);
+  background: white;
+  border-color: var(--zoom-blue);
+  box-shadow: 0 0 0 4px rgba(11, 92, 255, 0.1);
 }
 
 .dashboard-search {
@@ -68,12 +66,11 @@
 
 .search-icon {
   position: absolute;
-  left: 1.25rem;
+  left: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #00c853;
+  color: var(--zoom-gray);
   opacity: 0.8;
-  transition: opacity 0.3s ease;
 }
 
 .search-bar-wrapper:focus-within .search-icon {
@@ -109,26 +106,22 @@
 
 .tool-card {
   background: white;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 20px;
-  padding: 2rem 1.5rem;
+  border: 1px solid #E2E2E7;
+  border-radius: 24px;
+  padding: 3rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
 }
 
 .tool-card:hover {
-  transform: translateY(-10px);
-  background: white;
-  border-color: var(--accent-green);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-color: var(--zoom-blue);
+  box-shadow: 0 20px 40px rgba(0, 3, 31, 0.06);
+  transform: translateY(-5px);
 }
 
 .tool-card::before {
@@ -148,22 +141,21 @@
 }
 
 .icon-wrapper {
-  width: 64px;
-  height: 64px;
-  background: #f1f5f9;
-  border-radius: 16px;
+  width: 72px;
+  height: 72px;
+  background: #F5F5F7;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.2rem;
-  color: var(--accent-green);
+  margin-bottom: 1.5rem;
+  color: var(--zoom-blue);
   transition: all 0.3s ease;
 }
 
 .tool-card:hover .icon-wrapper {
-  background: var(--accent-green);
+  background: var(--zoom-blue);
   color: white;
-  transform: rotate(10deg) scale(1.1);
 }
 
 .tool-title {

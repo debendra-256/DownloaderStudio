@@ -4,8 +4,9 @@ import { jsPDF } from "jspdf";
 import saveAs from 'file-saver';
 import * as XLSX from 'xlsx';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
-import Dashboard from './Dashboard';
+import { ChevronDown, Clock, Download, Image, FileText, ChevronLeft, ChevronRight, HelpCircle, Video } from 'lucide-react';
+import Meeting from './Meeting';
+import Dashboard, { TOOLS } from './Dashboard';
 import Downloader from './Downloader';
 import ScreenRecorder from './ScreenRecorder';
 import QRCodeGenerator from './QRCodeGenerator';
@@ -588,7 +589,8 @@ function AppContent({
               <div className="nav-dropdown-grid">
                 <div className="nav-dropdown-group">
                   <h4>Video & Audio</h4>
-                  <NavLink to="/home" className="dropdown-link" onClick={() => navigate('/home')}>Media Downloader</NavLink>
+                  <NavLink to="/downloader" className="dropdown-link" onClick={() => navigate('/downloader')}>Media Downloader</NavLink>
+                  <NavLink to="/meeting" className="dropdown-link" onClick={() => navigate('/meeting')}>AI Video Meetings</NavLink>
                   <NavLink to="/video-to-mp3" className="dropdown-link" onClick={() => navigate('/video-to-mp3')}>Video to MP3</NavLink>
                   <NavLink to="/screen-recorder" className="dropdown-link" onClick={() => navigate('/screen-recorder')}>Screen Recorder</NavLink>
                   <NavLink to="/watermark" className="dropdown-link" onClick={() => navigate('/watermark')}>Watermark Studio</NavLink>
@@ -616,17 +618,94 @@ function AppContent({
       <main className="hero-section">
         <Routes>
           <Route path="/" element={
-            <Dashboard onSelectTool={(toolId) => {
-              if (toolId === 'downloader') navigate('/home');
-              else if (toolId === 'notes-from-v') navigate('/ai-notes');
-              else if (toolId === 'screen-rec') navigate('/screen-recorder');
-              else if (toolId === 'qr-gen') navigate('/qr-generator');
-              else if (toolId === 'add-watermark') navigate('/watermark');
-              else if (toolId === 'emi-calc') navigate('/emi-calculator');
-              else if (toolId === 'v-to-mp3') navigate('/video-to-mp3');
-              else if (toolId === 'img-compress') navigate('/img-compressor');
-              else alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
-            }} />
+            <>
+              <div style={{ background: '#FFFFFF', padding: '0 2rem 4rem' }}>
+                <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                  <Dashboard onSelectTool={(toolId) => {
+                    if (toolId === 'downloader') navigate('/downloader');
+                    else if (toolId === 'notes-from-v') navigate('/ai-notes');
+                    else if (toolId === 'screen-rec') navigate('/screen-recorder');
+                    else if (toolId === 'qr-gen') navigate('/qr-generator');
+                    else if (toolId === 'add-watermark') navigate('/watermark');
+                    else if (toolId === 'emi-calc') navigate('/emi-calculator');
+                    else if (toolId === 'v-to-mp3') navigate('/video-to-mp3');
+                    else if (toolId === 'img-compress') navigate('/img-compressor');
+                    else if (toolId === 'meeting') navigate('/meeting');
+                    else alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
+                  }} />
+
+                  {/* Premium Vertical Feature Sections */}
+                  <div style={{ marginTop: '10rem' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '8rem' }}>
+                       <h2 style={{ fontSize: '3.5rem', fontWeight: '950', color: 'var(--zoom-dark)', marginBottom: '1.5rem', letterSpacing: '-2px' }}>
+                          Next-Gen <span style={{ color: 'var(--zoom-blue)' }}>AI Workspace.</span>
+                       </h2>
+                       <p style={{ fontSize: '1.3rem', color: 'var(--zoom-gray)', maxWidth: '700px', margin: '0 auto' }}>
+                          Unlocking the future of media processing with cloud-native intelligence and precision.
+                       </p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12rem' }}>
+                       {/* Feature 1 */}
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <img src="/images/premium_ai_downloader_icon_1777475804135.png" alt="Downloader" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Global Media Extraction</h3>
+                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                                Download high-fidelity content from over 1,000+ global platforms with a single click. Our AI-driven engine selects the best available resolution for your device instantly.
+                             </p>
+                             <button onClick={() => navigate('/downloader')} style={{ background: 'var(--zoom-blue)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Get Started</button>
+                          </div>
+                       </div>
+
+                       {/* Feature 2 */}
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap', flexDirection: 'row-reverse' }}>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <img src="/images/premium_ai_intelligence_icon_1777475822656.png" alt="AI intelligence" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>AI Video Intelligence</h3>
+                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                                Transform videos into knowledge. Generate full transcriptions, AI-curated study notes, and deep summaries from any video URL in seconds.
+                             </p>
+                             <button onClick={() => navigate('/ai-notes')} style={{ background: 'var(--zoom-dark)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Try AI Notes</button>
+                          </div>
+                       </div>
+
+                       {/* Feature 3 */}
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <img src="/images/premium_ai_editor_icon_1777475850637.png" alt="Editor" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Creative Suite & Editors</h3>
+                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                                A full studio at your fingertips. From lossless image compression to advanced PDF editing and screen recording—all native, all secure, all free.
+                             </p>
+                             <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: '#F5F5F7', color: 'var(--zoom-dark)', padding: '1rem 2.5rem', borderRadius: '100px', border: '1px solid #E2E2E7', fontWeight: '700', cursor: 'pointer' }}>Explore Tools</button>
+                          </div>
+                       </div>
+
+                       {/* Feature 4: Screen Sharing */}
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap', flexDirection: 'row-reverse' }}>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <img src="/images/premium_ai_screen_sharing_icon_1777476226133.png" alt="Screen Sharing" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: '300px' }}>
+                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>AI Screen Sharing & Recording</h3>
+                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                                Capture and share your digital experience in ultra-high definition. Our browser-native recorder allows for seamless system audio and screen capture without any plugins.
+                             </p>
+                             <button onClick={() => navigate('/screen-recorder')} style={{ background: 'var(--zoom-blue)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Explore Screen Sharing</button>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           } />
           <Route path="/tools" element={
             <Dashboard onSelectTool={(toolId) => {
@@ -638,10 +717,11 @@ function AppContent({
               else if (toolId === 'emi-calc') navigate('/emi-calculator');
               else if (toolId === 'v-to-mp3') navigate('/video-to-mp3');
               else if (toolId === 'img-compress') navigate('/img-compressor');
+              else if (toolId === 'meeting') navigate('/meeting');
               else alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
             }} />
           } />
-          <Route path="/home" element={
+          <Route path="/downloader" element={
             <Downloader 
               url={url} setUrl={setUrl} isLoading={isLoading} 
               handleLoadMedia={handleLoadMedia} videoData={videoData} 
@@ -670,6 +750,7 @@ function AppContent({
               stopRecording={stopRecording}
             />
           } />
+          <Route path="/meeting" element={<Meeting />} />
           <Route path="/qr-generator" element={<QRCodeGenerator />} />
           <Route path="/watermark" element={<WatermarkEditor />} />
           <Route path="/emi-calculator" element={<EMICalculator />} />
@@ -722,12 +803,127 @@ function AppContent({
         </Routes>
       </main>
 
-      <footer style={{ textAlign: 'center', padding: '2rem', opacity: 0.8, fontSize: '0.9rem' }}>
-         © 2026 Downloader Studio - Advanced AI Media Workspace
+      <footer className="zoom-footer">
+        <div className="footer-grid">
+          <div className="footer-col">
+            <div className="logo-brand" style={{ marginBottom: '1.5rem' }}>
+              <span className="logo-vids" style={{ color: 'white' }}>Downloader</span>
+              <span className="logo-save" style={{ color: 'var(--zoom-blue)' }}>Studio.ai</span>
+            </div>
+            <p style={{ color: 'var(--zoom-gray)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+              The all-in-one platform for media professionals. Download, convert, and enhance your digital workspace with AI intelligence.
+            </p>
+          </div>
+          <div className="footer-col">
+            <h4>Products</h4>
+            <ul>
+              <li><Link to="/">Media Downloader</Link></li>
+              <li><Link to="/video-to-mp3">Video to MP3</Link></li>
+              <li><Link to="/watermark">Watermark Studio</Link></li>
+              <li><Link to="/screen-recorder">Screen Recorder</Link></li>
+            </ul>
+          </div>
+          <div className="footer-col">
+            <h4>AI Solutions</h4>
+            <ul>
+              <li><Link to="/ai-notes">AI Video Notes</Link></li>
+              <li><Link to="/ai-notes">Transcription</Link></li>
+              <li><Link to="/ai-notes">Summarization</Link></li>
+            </ul>
+          </div>
+          <div className="footer-col">
+            <h4>Resources</h4>
+            <ul>
+              <li><Link to="/how-to-use">User Guide</Link></li>
+              <li><Link to="/">API Docs</Link></li>
+              <li><Link to="/">Status</Link></li>
+            </ul>
+          </div>
+          <div className="footer-col">
+            <h4>Support</h4>
+            <ul>
+              <li><Link to="/">Help Center</Link></li>
+              <li><Link to="/">Contact Us</Link></li>
+              <li><Link to="/">Privacy Policy</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <div>© 2026 Downloader Studio. All rights reserved.</div>
+          <div style={{ display: 'flex', gap: '2rem' }}>
+             <span>English</span>
+             <span>Privacy Policy</span>
+             <span>Terms of Service</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
 }
 
 export default App;
+
+function FeaturedToolsSlider({ onSelectTool }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [slidesToShow, setSlidesToShow] = useState(3);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 600) setSlidesToShow(1);
+      else if (window.innerWidth <= 1024) setSlidesToShow(2);
+      else setSlidesToShow(3);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const maxIndex = TOOLS.length - slidesToShow;
+
+  const nextSlide = () => setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
+  const prevSlide = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
+
+  return (
+    <div className="slider-container">
+      <div className="slider-track" style={{ transform: `translateX(-${currentIndex * (100 / slidesToShow)}%)` }}>
+        {TOOLS.map((tool) => (
+          <div key={tool.id} className="slide-card" onClick={() => onSelectTool(tool.id)}>
+             <div style={{ 
+               width: '80px', 
+               height: '80px', 
+               background: 'linear-gradient(135deg, rgba(11, 92, 255, 0.1), rgba(11, 92, 255, 0.05))',
+               borderRadius: '24px',
+               display: 'flex',
+               alignItems: 'center',
+               justifyContent: 'center',
+               color: 'var(--zoom-blue)', 
+               marginBottom: '2rem',
+               margin: '0 auto 2rem'
+             }}>
+               <tool.icon size={40} />
+             </div>
+             <h3 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--zoom-dark)' }}>{tool.title}</h3>
+             <p style={{ color: 'var(--zoom-gray)', fontSize: '0.95rem', lineHeight: '1.6' }}>{tool.description}</p>
+          </div>
+        ))}
+      </div>
+      
+      <div className="slider-controls">
+        <button className="slider-arrow" onClick={prevSlide} disabled={currentIndex === 0} style={{ opacity: currentIndex === 0 ? 0.3 : 1 }}>
+          <ChevronLeft size={24} />
+        </button>
+        
+        <div style={{ display: 'flex', gap: '0.8rem' }}>
+           {Array.from({ length: Math.min(TOOLS.length - slidesToShow + 1, 10) }).map((_, i) => (
+             <div key={i} className={`nav-dot ${currentIndex === i ? 'active' : ''}`} onClick={() => setCurrentIndex(i)} />
+           ))}
+        </div>
+
+        <button className="slider-arrow" onClick={nextSlide} disabled={currentIndex === maxIndex} style={{ opacity: currentIndex === maxIndex ? 0.3 : 1 }}>
+          <ChevronRight size={24} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
