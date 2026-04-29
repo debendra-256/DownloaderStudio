@@ -3,7 +3,19 @@
   command = "npm install && npm run build"
   publish = "dist"
 
-# SPA fallback - redirect all routes to index.html for React Router
+# Proxy API requests to Render backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://downloaderstudio.onrender.com/api/:splat"
+  status = 200
+
+# Proxy Uploads to Render backend
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://downloaderstudio.onrender.com/uploads/:splat"
+  status = 200
+
+# SPA fallback - redirect all other routes to index.html for React Router
 [[redirects]]
   from = "/*"
   to = "/index.html"
