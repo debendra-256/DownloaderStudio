@@ -45,6 +45,9 @@ function App() {
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [countdown, setCountdown] = useState(0);
+  const [selectionArea, setSelectionArea] = useState(null); // {x, y, w, h}
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -128,15 +131,15 @@ function App() {
       const data = await response.json();
       if (data.success) {
         setVideoData(prev => prev ? { ...prev, videoUrl: data.videoUrl } : { videoUrl: data.videoUrl });
-        
+
         let downloadName = data.originalFilename;
         if (downloadName) {
-           downloadName = downloadName.replace(/_\[.*?\]/, '');
+          downloadName = downloadName.replace(/_\[.*?\]/, '');
         } else {
-           const ext = data.videoUrl.split('.').pop() || 'mp4';
-           downloadName = (videoData && videoData.title) ? `${videoData.title}.${ext}` : `video.${ext}`;
+          const ext = data.videoUrl.split('.').pop() || 'mp4';
+          downloadName = (videoData && videoData.title) ? `${videoData.title}.${ext}` : `video.${ext}`;
         }
-        
+
         // Trigger browser download
         saveAs(`${API_BASE}${data.videoUrl}`, downloadName);
       } else {
@@ -173,9 +176,9 @@ function App() {
       if (data.success) {
         let downloadName = data.originalFilename;
         if (downloadName) {
-           downloadName = downloadName.replace(/_\[.*?\]/, '');
+          downloadName = downloadName.replace(/_\[.*?\]/, '');
         } else {
-           downloadName = (videoData && videoData.title) ? `${videoData.title}.mp3` : "audio.mp3";
+          downloadName = (videoData && videoData.title) ? `${videoData.title}.mp3` : "audio.mp3";
         }
         saveAs(`${API_BASE}${data.audioUrl}`, downloadName);
       } else {
@@ -195,7 +198,7 @@ function App() {
     setIsLoading(true);
     setLoadingType('transcribing');
     setProgress(0);
-    
+
     // Simulate progress
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -361,9 +364,8 @@ function App() {
   };
 
   const startRecording = async () => {
-    // Check for mobile/browser support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-      alert("Screen recording is only supported on Desktop browsers (Chrome, Edge, Firefox). Mobile browsers do not allow screen capture for security reasons.");
+      alert("Screen recording is only supported on Desktop browsers.");
       return;
     }
     try {
@@ -372,8 +374,111 @@ function App() {
         audio: audioEnabled
       });
 
+      // Show selection mode if requested
+      if (isSelectionMode) {
+        // This is a simplified simulation: the user will select area in the ScreenRecorder component
+        // which will update selectionArea. We wait for them to confirm.
+      }
+
+      // Start Countdown
+      setCountdown(3);
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Wait for countdown
+      await new Promise(r => setTimeout(r, 3000));
+
+      let finalStream = stream;
+
+      // If selection area is defined, use a canvas to crop
+      if (selectionArea) {
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+
+        const canvas = document.createElement('canvas');
+        canvas.width = selectionArea.w;
+        canvas.height = selectionArea.h;
+        const ctx = canvas.getContext('2d');
+
+        const cropLoop = () => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            ctx.drawImage(video, selectionArea.x, selectionArea.y, selectionArea.w, selectionArea.h, 0, 0, selectionArea.w, selectionArea.h);
+            requestAnimationFrame(cropLoop);
+          }
+        };
+        requestAnimationFrame(cropLoop);
+        finalStream = canvas.captureStream(60); // 60 FPS
+        // Add audio tracks if any
+        stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+      }
+
       recordedChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(stream, {
+      const mediaRecorder = new MediaRecorder(finalStream, {
+        mimeType: 'video/webm;codecs=vp9,opus'
+      });
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordedChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+        let fileName = recordingName ? recordingName.trim() : `Area_Recording_${timestamp}`;
+        if (!fileName.endsWith('.webm')) fileName += '.webm';
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        stream.getTracks().forEach(track => track.stop());
+        setIsRecording(false);
+        setRecordingName('');
+        setSelectionArea(null);
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error starting screen recording:", err);
+      alert("Could not start screen recording.");
+    }
+  };
+
+  const startRecording1 = async () => {
+    try {
+      // Screen stream
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true
+      });
+
+      // Microphone stream
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+      // Combine tracks
+      const combinedStream = new MediaStream([
+        ...screenStream.getVideoTracks(),
+        ...screenStream.getAudioTracks(),
+        ...micStream.getAudioTracks()
+      ]);
+
+      recordedChunksRef.current = [];
+
+      const mediaRecorder = new MediaRecorder(combinedStream, {
         mimeType: 'video/webm;codecs=vp9,opus'
       });
 
@@ -386,10 +491,10 @@ function App() {
       mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
-        
+
         const now = new Date();
         const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
-        
+
         let fileName = recordingName ? recordingName.trim() : `Screen_Recording_${timestamp}`;
         if (!fileName.endsWith('.webm')) fileName += '.webm';
 
@@ -397,85 +502,22 @@ function App() {
         a.href = url;
         a.download = fileName;
         a.click();
+
         URL.revokeObjectURL(url);
-        
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
+
+        combinedStream.getTracks().forEach(track => track.stop());
         setIsRecording(false);
-        setRecordingName(''); // Reset for next time
+        setRecordingName('');
       };
 
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
       setIsRecording(true);
+
     } catch (err) {
-      console.error("Error starting screen recording:", err);
-      alert("Could not start screen recording. Make sure you have granted permissions.");
+      console.error("Error:", err);
     }
   };
-
-  const startRecording1 = async () => {
-  try {
-    // Screen stream
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-      audio: true
-    });
-
-    // Microphone stream
-    const micStream = await navigator.mediaDevices.getUserMedia({
-      audio: true
-    });
-
-    // Combine tracks
-    const combinedStream = new MediaStream([
-      ...screenStream.getVideoTracks(),
-      ...screenStream.getAudioTracks(),
-      ...micStream.getAudioTracks()
-    ]);
-
-    recordedChunksRef.current = [];
-
-    const mediaRecorder = new MediaRecorder(combinedStream, {
-      mimeType: 'video/webm;codecs=vp9,opus'
-    });
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        recordedChunksRef.current.push(event.data);
-      }
-    };
-
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-
-      const now = new Date();
-      const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
-      
-      let fileName = recordingName ? recordingName.trim() : `Screen_Recording_${timestamp}`;
-      if (!fileName.endsWith('.webm')) fileName += '.webm';
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-
-      URL.revokeObjectURL(url);
-
-      combinedStream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
-      setRecordingName('');
-    };
-
-    mediaRecorderRef.current = mediaRecorder;
-    mediaRecorder.start();
-    setIsRecording(true);
-
-  } catch (err) {
-    console.error("Error:", err);
-  }
-};
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -485,7 +527,7 @@ function App() {
 
   return (
     <Router>
-      <AppContent 
+      <AppContent
         url={url} setUrl={setUrl}
         isLoading={isLoading} setIsLoading={setIsLoading}
         loadingType={loadingType} setLoadingType={setLoadingType}
@@ -522,26 +564,34 @@ function App() {
         formatSize={formatSize}
         handleInstallApp={handleInstallApp}
         isInstallAvailable={!!deferredPrompt}
+        countdown={countdown}
+        setCountdown={setCountdown}
+        selectionArea={selectionArea}
+        setSelectionArea={setSelectionArea}
+        isSelectionMode={isSelectionMode}
+        setIsSelectionMode={setIsSelectionMode}
       />
     </Router>
   );
 }
 
-function AppContent({ 
-  url, setUrl, isLoading, setIsLoading, loadingType, setLoadingType, 
-  activeLoadingId, setActiveLoadingId, videoData, setVideoData, 
+function AppContent({
+  url, setUrl, isLoading, setIsLoading, loadingType, setLoadingType,
+  activeLoadingId, setActiveLoadingId, videoData, setVideoData,
   transcription, setTranscription, aiNote, setAiNote, studyNote, setStudyNote,
-  voiceConfig, setVoiceConfig, generatedAudio, setGeneratedAudio, 
-  videoAudioUrl, setVideoAudioUrl, customVoices, setCustomVoices, 
+  voiceConfig, setVoiceConfig, generatedAudio, setGeneratedAudio,
+  videoAudioUrl, setVideoAudioUrl, customVoices, setCustomVoices,
   images, setImages, targetLanguage, setTargetLanguage,
-  cloneAudioFile, setCloneAudioFile, cloneName, setCloneName, 
-  progress, setProgress, isRecording, setIsRecording, 
-  audioEnabled, setAudioEnabled, recordingName, setRecordingName, 
-  mediaType, setMediaType, handleLoadMedia, handleDownloadFormat, 
-  handleDownloadAudioOriginal, handleTranscribe, handleCreateStudyNote, 
-  handleCreateAudio, handleCloneVoice, handlePreviewVoice, 
+  cloneAudioFile, setCloneAudioFile, cloneName, setCloneName,
+  progress, setProgress, isRecording, setIsRecording,
+  audioEnabled, setAudioEnabled, recordingName, setRecordingName,
+  mediaType, setMediaType, handleLoadMedia, handleDownloadFormat,
+  handleDownloadAudioOriginal, handleTranscribe, handleCreateStudyNote,
+  handleCreateAudio, handleCloneVoice, handlePreviewVoice,
   downloadPdf, handleExportZip, startRecording, stopRecording, formatSize,
-  handleInstallApp, isInstallAvailable
+  handleInstallApp, isInstallAvailable,
+  countdown, setCountdown, selectionArea, setSelectionArea,
+  isSelectionMode, setIsSelectionMode
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -565,7 +615,7 @@ function AppContent({
         <div className="bottom-progress-bar">
           <div className="progress-content">
             <div className="spinner small-spinner"></div>
-            <span style={{fontWeight: '600', letterSpacing: '0.5px'}}>
+            <span style={{ fontWeight: '600', letterSpacing: '0.5px' }}>
               {loadingType === 'audio-download' ? 'Downloading Audio...' : 'Downloading Video...'}
             </span>
           </div>
@@ -582,8 +632,8 @@ function AppContent({
         </div>
         <ul className="nav-links">
           <li className="nav-item-dropdown">
-            <span className="nav-dropdown-trigger" style={{color: '#1e293b'}}>
-              Products <ChevronDown size={16} />
+            <span className="nav-dropdown-trigger">
+              Solutions <ChevronDown size={16} />
             </span>
             <div className="nav-dropdown-menu">
               <div className="nav-dropdown-grid">
@@ -605,9 +655,9 @@ function AppContent({
               </div>
             </div>
           </li>
-          <li><NavLink to="/" style={({ isActive }) => ({ color: isActive ? '#0277bd' : '#1e293b' })}>Tools Hub</NavLink></li>
-          <li><NavLink to="/how-to-use" style={({ isActive }) => ({ color: isActive ? '#0277bd' : '#1e293b' })}>Guide</NavLink></li>
-          <li><span style={{color: '#1e293b'}}>API</span></li>
+          <li><NavLink to="/" className={({ isActive }) => isActive ? 'active-nav' : ''}>Tools Hub</NavLink></li>
+          <li><NavLink to="/how-to-use" className={({ isActive }) => isActive ? 'active-nav' : ''}>Guide</NavLink></li>
+          <li><span>API</span></li>
         </ul>
         <div className="nav-actions">
           <button className="nav-btn-login">Log in</button>
@@ -637,70 +687,70 @@ function AppContent({
                   {/* Premium Vertical Feature Sections */}
                   <div style={{ marginTop: '10rem' }}>
                     <div style={{ textAlign: 'center', marginBottom: '8rem' }}>
-                       <h2 style={{ fontSize: '3.5rem', fontWeight: '950', color: 'var(--zoom-dark)', marginBottom: '1.5rem', letterSpacing: '-2px' }}>
-                          Next-Gen <span style={{ color: 'var(--zoom-blue)' }}>AI Workspace.</span>
-                       </h2>
-                       <p style={{ fontSize: '1.3rem', color: 'var(--zoom-gray)', maxWidth: '700px', margin: '0 auto' }}>
-                          Unlocking the future of media processing with cloud-native intelligence and precision.
-                       </p>
+                      <h2 style={{ fontSize: '3.5rem', fontWeight: '950', color: 'var(--zoom-dark)', marginBottom: '1.5rem', letterSpacing: '-2px' }}>
+                        Next-Gen <span style={{ color: 'var(--zoom-blue)' }}>AI Workspace.</span>
+                      </h2>
+                      <p style={{ fontSize: '1.3rem', color: 'var(--zoom-gray)', maxWidth: '700px', margin: '0 auto' }}>
+                        Unlocking the future of media processing with cloud-native intelligence and precision.
+                      </p>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12rem' }}>
-                       {/* Feature 1 */}
-                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap' }}>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <img src="/images/premium_ai_downloader_icon_1777475804135.png" alt="Downloader" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Global Media Extraction</h3>
-                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
-                                Download high-fidelity content from over 1,000+ global platforms with a single click. Our AI-driven engine selects the best available resolution for your device instantly.
-                             </p>
-                             <button onClick={() => navigate('/downloader')} style={{ background: 'var(--zoom-blue)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Get Started</button>
-                          </div>
-                       </div>
+                      {/* Feature 1 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <img src="/images/premium_ai_downloader_icon_1777475804135.png" alt="Downloader" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Global Media Extraction</h3>
+                          <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                            Download high-fidelity content from over 1,000+ global platforms with a single click. Our AI-driven engine selects the best available resolution for your device instantly.
+                          </p>
+                          <button onClick={() => navigate('/downloader')} style={{ background: 'var(--zoom-blue)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Get Started</button>
+                        </div>
+                      </div>
 
-                       {/* Feature 2 */}
-                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap', flexDirection: 'row-reverse' }}>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <img src="/images/premium_ai_intelligence_icon_1777475822656.png" alt="AI intelligence" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>AI Video Intelligence</h3>
-                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
-                                Transform videos into knowledge. Generate full transcriptions, AI-curated study notes, and deep summaries from any video URL in seconds.
-                             </p>
-                             <button onClick={() => navigate('/ai-notes')} style={{ background: 'var(--zoom-dark)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Try AI Notes</button>
-                          </div>
-                       </div>
+                      {/* Feature 2 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap', flexDirection: 'row-reverse' }}>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <img src="/images/premium_ai_intelligence_icon_1777475822656.png" alt="AI intelligence" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>AI Video Intelligence</h3>
+                          <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                            Transform videos into knowledge. Generate full transcriptions, AI-curated study notes, and deep summaries from any video URL in seconds.
+                          </p>
+                          <button onClick={() => navigate('/ai-notes')} style={{ background: 'var(--zoom-dark)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Try AI Notes</button>
+                        </div>
+                      </div>
 
-                       {/* Feature 3 */}
-                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap' }}>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <img src="/images/premium_ai_editor_icon_1777475850637.png" alt="Editor" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Creative Suite & Editors</h3>
-                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
-                                A full studio at your fingertips. From lossless image compression to advanced PDF editing and screen recording—all native, all secure, all free.
-                             </p>
-                             <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: '#F5F5F7', color: 'var(--zoom-dark)', padding: '1rem 2.5rem', borderRadius: '100px', border: '1px solid #E2E2E7', fontWeight: '700', cursor: 'pointer' }}>Explore Tools</button>
-                          </div>
-                       </div>
+                      {/* Feature 3 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <img src="/images/premium_ai_editor_icon_1777475850637.png" alt="Editor" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>Creative Suite & Editors</h3>
+                          <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                            A full studio at your fingertips. From lossless image compression to advanced PDF editing and screen recording—all native, all secure, all free.
+                          </p>
+                          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: '#F5F5F7', color: 'var(--zoom-dark)', padding: '1rem 2.5rem', borderRadius: '100px', border: '1px solid #E2E2E7', fontWeight: '700', cursor: 'pointer' }}>Explore Tools</button>
+                        </div>
+                      </div>
 
-                       {/* Feature 4: Screen Sharing */}
-                       <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap', flexDirection: 'row-reverse' }}>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <img src="/images/premium_ai_screen_sharing_icon_1777476226133.png" alt="Screen Sharing" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: '300px' }}>
-                             <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>AI Screen Sharing & Recording</h3>
-                             <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
-                                Capture and share your digital experience in ultra-high definition. Our browser-native recorder allows for seamless system audio and screen capture without any plugins.
-                             </p>
-                             <button onClick={() => navigate('/screen-recorder')} style={{ background: 'var(--zoom-blue)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Explore Screen Sharing</button>
-                          </div>
-                       </div>
+                      {/* Feature 4: Screen Sharing */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6rem', flexWrap: 'wrap', flexDirection: 'row-reverse' }}>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <img src="/images/premium_ai_screen_sharing_icon_1777476226133.png" alt="Screen Sharing" style={{ width: '100%', borderRadius: '40px', boxShadow: '0 40px 100px rgba(11, 92, 255, 0.15)' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <h3 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1.5rem' }}>AI Screen Sharing & Recording</h3>
+                          <p style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)', lineHeight: '1.8', marginBottom: '2.5rem' }}>
+                            Capture and share your digital experience in ultra-high definition. Our browser-native recorder allows for seamless system audio and screen capture without any plugins.
+                          </p>
+                          <button onClick={() => navigate('/screen-recorder')} style={{ background: 'var(--zoom-blue)', color: 'white', padding: '1rem 2.5rem', borderRadius: '100px', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Explore Screen Sharing</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -722,9 +772,9 @@ function AppContent({
             }} />
           } />
           <Route path="/downloader" element={
-            <Downloader 
-              url={url} setUrl={setUrl} isLoading={isLoading} 
-              handleLoadMedia={handleLoadMedia} videoData={videoData} 
+            <Downloader
+              url={url} setUrl={setUrl} isLoading={isLoading}
+              handleLoadMedia={handleLoadMedia} videoData={videoData}
               activeLoadingId={activeLoadingId} handleDownloadFormat={handleDownloadFormat}
               handleDownloadAudioOriginal={handleDownloadAudioOriginal}
               formatSize={formatSize} API_BASE={API_BASE}
@@ -736,18 +786,23 @@ function AppContent({
               customVoices={customVoices} handlePreviewVoice={handlePreviewVoice}
               handleCreateAudio={handleCreateAudio} cloneName={cloneName}
               setCloneName={setCloneName} setCloneAudioFile={setCloneAudioFile}
-              handleCloneVoice={handleCloneVoice} 
+              handleCloneVoice={handleCloneVoice}
               generatedAudio={generatedAudio}
               handleInstallApp={handleInstallApp}
               isInstallAvailable={isInstallAvailable}
             />
           } />
           <Route path="/screen-recorder" element={
-            <ScreenRecorder 
+            <ScreenRecorder
               isRecording={isRecording} recordingName={recordingName}
               setRecordingName={setRecordingName} audioEnabled={audioEnabled}
               setAudioEnabled={setAudioEnabled} startRecording={startRecording}
               stopRecording={stopRecording}
+              countdown={countdown}
+              selectionArea={selectionArea}
+              setSelectionArea={setSelectionArea}
+              isSelectionMode={isSelectionMode}
+              setIsSelectionMode={setIsSelectionMode}
             />
           } />
           <Route path="/meeting" element={<Meeting />} />
@@ -776,27 +831,27 @@ function AppContent({
                   {isLoading ? 'ANALYZING...' : 'GENERATE AI NOTES'}
                 </button>
               </div>
-              
+
               {(transcription || aiNote || studyNote) && (
-                 <div className="ai-results-container results-card">
-                   <div className="tabs">
-                      <div className="tab active">TRANSCRIPTION & NOTES</div>
-                   </div>
-                   <div className="tab-content" style={{ display: 'block', padding: '2rem' }}>
-                      {aiNote && (
-                        <div className="note-section">
-                          <h3>AI Summary</h3>
-                          <div className="ai-text-box">{aiNote}</div>
-                        </div>
-                      )}
-                      {transcription && (
-                        <div className="note-section" style={{ marginTop: '2rem' }}>
-                          <h3>Full Transcription</h3>
-                          <div className="ai-text-box" style={{ maxHeight: '400px', overflowY: 'auto' }}>{transcription}</div>
-                        </div>
-                      )}
-                   </div>
-                 </div>
+                <div className="ai-results-container results-card">
+                  <div className="tabs">
+                    <div className="tab active">TRANSCRIPTION & NOTES</div>
+                  </div>
+                  <div className="tab-content" style={{ display: 'block', padding: '2rem' }}>
+                    {aiNote && (
+                      <div className="note-section">
+                        <h3>AI Summary</h3>
+                        <div className="ai-text-box">{aiNote}</div>
+                      </div>
+                    )}
+                    {transcription && (
+                      <div className="note-section" style={{ marginTop: '2rem' }}>
+                        <h3>Full Transcription</h3>
+                        <div className="ai-text-box" style={{ maxHeight: '400px', overflowY: 'auto' }}>{transcription}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           } />
@@ -851,9 +906,9 @@ function AppContent({
         <div className="footer-bottom">
           <div>© 2026 Downloader Studio. All rights reserved.</div>
           <div style={{ display: 'flex', gap: '2rem' }}>
-             <span>English</span>
-             <span>Privacy Policy</span>
-             <span>Terms of Service</span>
+            <span>English</span>
+            <span>Privacy Policy</span>
+            <span>Terms of Service</span>
           </div>
         </div>
       </footer>
@@ -866,7 +921,7 @@ export default App;
 function FeaturedToolsSlider({ onSelectTool }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesToShow, setSlidesToShow] = useState(3);
-  
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 600) setSlidesToShow(1);
@@ -888,35 +943,35 @@ function FeaturedToolsSlider({ onSelectTool }) {
       <div className="slider-track" style={{ transform: `translateX(-${currentIndex * (100 / slidesToShow)}%)` }}>
         {TOOLS.map((tool) => (
           <div key={tool.id} className="slide-card" onClick={() => onSelectTool(tool.id)}>
-             <div style={{ 
-               width: '80px', 
-               height: '80px', 
-               background: 'linear-gradient(135deg, rgba(11, 92, 255, 0.1), rgba(11, 92, 255, 0.05))',
-               borderRadius: '24px',
-               display: 'flex',
-               alignItems: 'center',
-               justifyContent: 'center',
-               color: 'var(--zoom-blue)', 
-               marginBottom: '2rem',
-               margin: '0 auto 2rem'
-             }}>
-               <tool.icon size={40} />
-             </div>
-             <h3 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--zoom-dark)' }}>{tool.title}</h3>
-             <p style={{ color: 'var(--zoom-gray)', fontSize: '0.95rem', lineHeight: '1.6' }}>{tool.description}</p>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: 'linear-gradient(135deg, rgba(11, 92, 255, 0.1), rgba(11, 92, 255, 0.05))',
+              borderRadius: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--zoom-blue)',
+              marginBottom: '2rem',
+              margin: '0 auto 2rem'
+            }}>
+              <tool.icon size={40} />
+            </div>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--zoom-dark)' }}>{tool.title}</h3>
+            <p style={{ color: 'var(--zoom-gray)', fontSize: '0.95rem', lineHeight: '1.6' }}>{tool.description}</p>
           </div>
         ))}
       </div>
-      
+
       <div className="slider-controls">
         <button className="slider-arrow" onClick={prevSlide} disabled={currentIndex === 0} style={{ opacity: currentIndex === 0 ? 0.3 : 1 }}>
           <ChevronLeft size={24} />
         </button>
-        
+
         <div style={{ display: 'flex', gap: '0.8rem' }}>
-           {Array.from({ length: Math.min(TOOLS.length - slidesToShow + 1, 10) }).map((_, i) => (
-             <div key={i} className={`nav-dot ${currentIndex === i ? 'active' : ''}`} onClick={() => setCurrentIndex(i)} />
-           ))}
+          {Array.from({ length: Math.min(TOOLS.length - slidesToShow + 1, 10) }).map((_, i) => (
+            <div key={i} className={`nav-dot ${currentIndex === i ? 'active' : ''}`} onClick={() => setCurrentIndex(i)} />
+          ))}
         </div>
 
         <button className="slider-arrow" onClick={nextSlide} disabled={currentIndex === maxIndex} style={{ opacity: currentIndex === maxIndex ? 0.3 : 1 }}>
