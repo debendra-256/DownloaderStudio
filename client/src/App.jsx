@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import JSZip from 'jszip';
 import { jsPDF } from "jspdf";
 import saveAs from 'file-saver';
 import * as XLSX from 'xlsx';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Clock, Download, Image, FileText, ChevronLeft, ChevronRight, HelpCircle, Video } from 'lucide-react';
+import { ChevronDown, Clock, Download, Image, FileText, ChevronLeft, ChevronRight, HelpCircle, Video, X, Camera, User, Maximize2, Minimize2, Pencil, Eraser, Trash2, Pause, Play, StopCircle, ExternalLink } from 'lucide-react';
 import Meeting from './Meeting';
 import Dashboard, { TOOLS } from './Dashboard';
 import Downloader from './Downloader';
@@ -48,6 +49,15 @@ function App() {
   const [countdown, setCountdown] = useState(0);
   const [selectionArea, setSelectionArea] = useState(null); // {x, y, w, h}
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [bubbleType, setBubbleType] = useState('none'); // 'none', 'camera', 'photo'
+  const [bubblePos, setBubblePos] = useState({ x: 20, y: 20 });
+  const [isDraggingBubble, setIsDraggingBubble] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [isPipActive, setIsPipActive] = useState(false);
+  const pipWindowRef = useRef(null);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -63,6 +73,18 @@ function App() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+
+  useEffect(() => {
+    let timer;
+    if (isRecording && !isPaused) {
+      timer = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timer);
+    }
+    return () => clearInterval(timer);
+  }, [isRecording, isPaused]);
 
   const handleInstallApp = async () => {
     if (!deferredPrompt) {
@@ -421,21 +443,24 @@ function App() {
       }
 
       recordedChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(finalStream, {
-        mimeType: 'video/webm;codecs=vp9,opus'
-      });
+      const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=h264') 
+        ? 'video/mp4;codecs=h264' 
+        : 'video/webm;codecs=vp9,opus';
+        
+      const mediaRecorder = new MediaRecorder(finalStream, { mimeType });
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) recordedChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        const extension = mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(recordedChunksRef.current, { type: mediaRecorder.mimeType });
         const url = URL.createObjectURL(blob);
         const now = new Date();
         const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
         let fileName = recordingName ? recordingName.trim() : `Area_Recording_${timestamp}`;
-        if (!fileName.endsWith('.webm')) fileName += '.webm';
+        if (!fileName.endsWith(`.${extension}`)) fileName += `.${extension}`;
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
@@ -445,6 +470,9 @@ function App() {
         setIsRecording(false);
         setRecordingName('');
         setSelectionArea(null);
+        setBubbleType('none');
+        setRecordingTime(0);
+        setIsPaused(false);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -478,9 +506,11 @@ function App() {
 
       recordedChunksRef.current = [];
 
-      const mediaRecorder = new MediaRecorder(combinedStream, {
-        mimeType: 'video/webm;codecs=vp9,opus'
-      });
+      const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=h264') 
+        ? 'video/mp4;codecs=h264' 
+        : 'video/webm;codecs=vp9,opus';
+
+      const mediaRecorder = new MediaRecorder(combinedStream, { mimeType });
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -489,14 +519,15 @@ function App() {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        const extension = mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(recordedChunksRef.current, { type: mediaRecorder.mimeType });
         const url = URL.createObjectURL(blob);
 
         const now = new Date();
         const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
 
         let fileName = recordingName ? recordingName.trim() : `Screen_Recording_${timestamp}`;
-        if (!fileName.endsWith('.webm')) fileName += '.webm';
+        if (!fileName.endsWith(`.${extension}`)) fileName += `.${extension}`;
 
         const a = document.createElement('a');
         a.href = url;
@@ -508,6 +539,9 @@ function App() {
         combinedStream.getTracks().forEach(track => track.stop());
         setIsRecording(false);
         setRecordingName('');
+        setBubbleType('none');
+        setRecordingTime(0);
+        setIsPaused(false);
       };
 
       mediaRecorderRef.current = mediaRecorder;
@@ -522,6 +556,78 @@ function App() {
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+    }
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+    }
+  };
+
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+    }
+  };
+
+  const togglePip = async () => {
+    if (isPipActive) {
+      if (pipWindowRef.current) pipWindowRef.current.close();
+      setIsPipActive(false);
+      return;
+    }
+
+    // Modern Document PiP (Chrome 116+)
+    if (window.documentPictureInPicture) {
+      try {
+        const pipWindow = await window.documentPictureInPicture.requestWindow({
+          width: 320,
+          height: 240,
+        });
+
+        pipWindowRef.current = pipWindow;
+        setIsPipActive(true);
+
+        // Copy ALL styles to PIP window for premium look
+        [...document.styleSheets].forEach((styleSheet) => {
+          try {
+            if (styleSheet.href) {
+              const newLink = pipWindow.document.createElement('link');
+              newLink.rel = 'stylesheet';
+              newLink.href = styleSheet.href;
+              pipWindow.document.head.appendChild(newLink);
+            } else if (styleSheet.cssRules) {
+              const newStyle = pipWindow.document.createElement('style');
+              [...styleSheet.cssRules].forEach((rule) => {
+                newStyle.appendChild(pipWindow.document.createTextNode(rule.cssText));
+              });
+              pipWindow.document.head.appendChild(newStyle);
+            }
+          } catch (e) { 
+            console.warn("Could not copy some styles to PiP window:", e);
+          }
+        });
+
+        pipWindow.addEventListener("pagehide", () => {
+          setIsPipActive(false);
+          pipWindowRef.current = null;
+        });
+
+      } catch (err) {
+        console.error("PiP error:", err);
+      }
+    } else {
+      // Fallback: Standard Video PiP
+      if (videoRef.current) {
+        try {
+          await videoRef.current.requestPictureInPicture();
+        } catch (e) {
+          alert("Your browser does not support floating windows. Please use Chrome or Edge for the best experience.");
+        }
+      }
     }
   };
 
@@ -570,10 +676,162 @@ function App() {
         setSelectionArea={setSelectionArea}
         isSelectionMode={isSelectionMode}
         setIsSelectionMode={setIsSelectionMode}
+        bubbleType={bubbleType}
+        setBubbleType={setBubbleType}
+        bubblePos={bubblePos}
+        setBubblePos={setBubblePos}
+        isDraggingBubble={isDraggingBubble}
+        setIsDraggingBubble={setIsDraggingBubble}
+        photoUrl={photoUrl}
+        setPhotoUrl={setPhotoUrl}
+        isMaximized={isMaximized}
+        setIsMaximized={setIsMaximized}
+        isPaused={isPaused}
+        pauseRecording={pauseRecording}
+        resumeRecording={resumeRecording}
+        recordingTime={recordingTime}
+        togglePip={togglePip}
+        isPipActive={isPipActive}
+        pipWindow={pipWindowRef.current}
       />
     </Router>
   );
 }
+
+const LecturerBubbleContent = ({ 
+  bubbleType, videoRef, photoUrl, isMaximized, setIsMaximized, setBubbleType, 
+  isRecording, recordingTime, isPaused, resumeRecording, pauseRecording, stopRecording,
+  bubblePos, setBubblePos, isDraggingBubble, setIsDraggingBubble, setDragOffset, dragOffset,
+  togglePip, isPipActive, container
+}) => {
+  
+  // Re-attach stream when moving between windows
+  useEffect(() => {
+    if (bubbleType === 'camera' && videoRef.current) {
+      const video = videoRef.current;
+      // Access the stream from the main window's global state if needed, 
+      // but usually the ref keeps the srcObject. However, it needs a nudge.
+      if (video.srcObject) {
+        video.play().catch(e => console.error("Auto-play failed:", e));
+      }
+    }
+  }, [isPipActive, bubbleType]);
+
+  const content = (
+    <div 
+      style={{ 
+        position: isPipActive ? 'relative' : 'fixed', 
+        bottom: isPipActive ? '0' : (isMaximized ? '0' : `${bubblePos.y}px`), 
+        right: isPipActive ? '0' : (isMaximized ? '0' : `${bubblePos.x}px`),
+        width: isPipActive ? '100%' : (isMaximized ? '100vw' : '280px'),
+        height: isPipActive ? '100%' : (isMaximized ? '100vh' : '180px'),
+        borderRadius: (isMaximized || isPipActive) ? '0' : '16px',
+        overflow: 'hidden',
+        border: (isMaximized || isPipActive) ? 'none' : '3px solid var(--zoom-blue)',
+        boxShadow: isPipActive ? 'none' : '0 30px 60px rgba(0,0,0,0.4)',
+        zIndex: 100000,
+        cursor: (isDraggingBubble && !isPipActive) ? 'grabbing' : (isMaximized || isPipActive ? 'default' : 'grab'),
+        background: '#000',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: (isDraggingBubble || isPipActive) ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      }}
+      onMouseDown={(e) => {
+        if (isMaximized || isPipActive) return;
+        setIsDraggingBubble(true);
+        setDragOffset({
+          x: window.innerWidth - e.clientX - bubblePos.x,
+          y: window.innerHeight - e.clientY - bubblePos.y
+        });
+      }}
+    >
+      {bubbleType === 'camera' && (
+        <video 
+          ref={videoRef} 
+          autoPlay 
+          muted 
+          playsInline 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} 
+        />
+      )}
+      {bubbleType === 'photo' && photoUrl && (
+        <img 
+          src={photoUrl} 
+          alt="Lecturer" 
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+        />
+      )}
+      
+      {/* Control Bar Overlay */}
+      <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '10px', zIndex: 10 }}>
+        {!isPipActive && (
+          <button 
+            onClick={togglePip}
+            style={{ background: 'rgba(11, 92, 255, 0.6)', border: 'none', borderRadius: '8px', color: 'white', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title="Pop Out (Float over all screens)"
+          >
+            <ExternalLink size={18} />
+          </button>
+        )}
+        <button 
+          onClick={() => setIsMaximized(!isMaximized)}
+          style={{ background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '8px', color: 'white', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          title={isMaximized ? "Minimize" : "Maximize"}
+        >
+          {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+        </button>
+        <button 
+          onClick={() => {
+            if (isPipActive && window.documentPictureInPicture.window) {
+              window.documentPictureInPicture.window.close();
+            }
+            setBubbleType('none');
+          }}
+          style={{ background: 'rgba(255,59,48,0.8)', border: 'none', borderRadius: '8px', color: 'white', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          title="Close Bubble"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* Recording Timer & Controls (Only if recording) */}
+      {isRecording && (
+        <div style={{ position: 'absolute', bottom: isPipActive ? '5px' : '15px', left: isPipActive ? '5px' : '15px', right: isPipActive ? '5px' : '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.6)', padding: isPipActive ? '4px 8px' : '8px 12px', borderRadius: '12px', backdropFilter: 'blur(10px)', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', fontWeight: '800', fontSize: isPipActive ? '0.75rem' : '0.85rem' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isPaused ? '#FFCC00' : '#FF3B30', animation: isPaused ? 'none' : 'pulse 1.5s infinite' }}></div>
+            <span>{new Date(recordingTime * 1000).toISOString().substr(14, 5)}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {isPaused ? (
+              <button onClick={resumeRecording} style={{ background: '#4CD964', border: 'none', borderRadius: '6px', color: 'white', padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
+                <Play size={12} fill="currentColor" /> RESUME
+              </button>
+            ) : (
+              <button onClick={pauseRecording} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '6px', color: 'white', padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
+                <Pause size={12} fill="currentColor" /> PAUSE
+              </button>
+            )}
+            <button onClick={stopRecording} style={{ background: '#FF3B30', border: 'none', borderRadius: '6px', color: 'white', padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
+              <StopCircle size={12} fill="currentColor" /> STOP
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Draggable Indicator */}
+      {!isMaximized && !isRecording && !isPipActive && (
+        <div style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', width: '40px', height: '4px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px' }}></div>
+      )}
+    </div>
+  );
+
+  if (isPipActive && container) {
+    return createPortal(content, container);
+  }
+
+  return content;
+};
 
 function AppContent({
   url, setUrl, isLoading, setIsLoading, loadingType, setLoadingType,
@@ -591,14 +849,101 @@ function AppContent({
   downloadPdf, handleExportZip, startRecording, stopRecording, formatSize,
   handleInstallApp, isInstallAvailable,
   countdown, setCountdown, selectionArea, setSelectionArea,
-  isSelectionMode, setIsSelectionMode
+  isSelectionMode, setIsSelectionMode,
+  bubbleType, setBubbleType, bubblePos, setBubblePos,
+  isDraggingBubble, setIsDraggingBubble, photoUrl, setPhotoUrl,
+  isMaximized, setIsMaximized,
+  isPaused, pauseRecording, resumeRecording, recordingTime,
+  togglePip, isPipActive, pipWindow
 }) {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPage = location.pathname === '/' ? 'dashboard' : location.pathname.substring(1);
 
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  useEffect(() => {
+    if (bubbleType === 'camera') {
+      const startCamera = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          streamRef.current = stream;
+          if (videoRef.current) videoRef.current.srcObject = stream;
+        } catch (err) {
+          console.error("Camera access error:", err);
+          alert("Could not access camera.");
+          setBubbleType('none');
+        }
+      };
+      startCamera();
+    } else {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    }
+  }, [bubbleType, setBubbleType]);
+
+  // Ensure video stream is re-attached on every render if active
+  useEffect(() => {
+    if (bubbleType === 'camera' && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  });
+
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDraggingBubble) {
+        setBubblePos({
+          x: window.innerWidth - e.clientX - dragOffset.x,
+          y: window.innerHeight - e.clientY - dragOffset.y
+        });
+      }
+    };
+    const handleMouseUp = () => setIsDraggingBubble(false);
+
+    if (isDraggingBubble) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingBubble, dragOffset, setIsDraggingBubble, setBubblePos]);
+
   return (
     <div className="app-container">
+      {bubbleType !== 'none' && (
+        <LecturerBubbleContent 
+          bubbleType={bubbleType}
+          videoRef={videoRef}
+          photoUrl={photoUrl}
+          isMaximized={isMaximized}
+          setIsMaximized={setIsMaximized}
+          setBubbleType={setBubbleType}
+          isRecording={isRecording}
+          recordingTime={recordingTime}
+          isPaused={isPaused}
+          resumeRecording={resumeRecording}
+          pauseRecording={pauseRecording}
+          stopRecording={stopRecording}
+          bubblePos={bubblePos}
+          setBubblePos={setBubblePos}
+          isDraggingBubble={isDraggingBubble}
+          setIsDraggingBubble={setIsDraggingBubble}
+          setDragOffset={setDragOffset}
+          dragOffset={dragOffset}
+          togglePip={togglePip}
+          isPipActive={isPipActive}
+          pipWindow={pipWindow}
+          container={isPipActive && pipWindow ? pipWindow.document.body : null}
+        />
+      )}
+
       {progress > 0 && (
         <div className="progress-beam-container">
           <div className="progress-beam-fill" style={{ width: `${progress}%` }}></div>
@@ -803,6 +1148,10 @@ function AppContent({
               setSelectionArea={setSelectionArea}
               isSelectionMode={isSelectionMode}
               setIsSelectionMode={setIsSelectionMode}
+              bubbleType={bubbleType}
+              setBubbleType={setBubbleType}
+              photoUrl={photoUrl}
+              setPhotoUrl={setPhotoUrl}
             />
           } />
           <Route path="/meeting" element={<Meeting />} />

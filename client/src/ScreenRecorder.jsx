@@ -1,14 +1,25 @@
 import React from 'react';
-import { Monitor, Mic, Download, Shield, Zap, CheckCircle, Video, Clock } from 'lucide-react';
+import { Monitor, Mic, Download, Shield, Zap, CheckCircle, Video, Clock, User, Camera, Image } from 'lucide-react';
 
 const ScreenRecorder = ({ 
   isRecording, recordingName, setRecordingName, audioEnabled, 
   setAudioEnabled, startRecording, stopRecording,
-  countdown 
+  countdown,
+  bubbleType, setBubbleType, photoUrl, setPhotoUrl
 }) => {
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPhotoUrl(url);
+      setBubbleType('photo');
+    }
+  };
 
   return (
     <div className="recorder-page animate-premium" style={{ background: '#FFFFFF', minHeight: '100vh', position: 'relative' }}>
+      
       {/* Countdown Overlay (Triggered from App.jsx after selection) */}
       {countdown > 0 && (
         <div style={{ 
@@ -68,20 +79,44 @@ const ScreenRecorder = ({
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F7', padding: '1.2rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-               <Mic size={20} color="var(--zoom-blue)" />
-               <span style={{ fontWeight: '700', color: 'var(--zoom-dark)' }}>Capture Audio</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            {/* Audio Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F7', padding: '1.2rem', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Mic size={20} color="var(--zoom-blue)" />
+                <span style={{ fontWeight: '700', color: 'var(--zoom-dark)' }}>Audio</span>
+              </div>
+              <label className="switch-label">
+                <input 
+                  type="checkbox" 
+                  checked={audioEnabled} 
+                  onChange={(e) => setAudioEnabled(e.target.checked)}
+                  disabled={isRecording}
+                />
+                <span className="slider"></span>
+              </label>
             </div>
-            <label className="switch-label">
-              <input 
-                type="checkbox" 
-                checked={audioEnabled} 
-                onChange={(e) => setAudioEnabled(e.target.checked)}
-                disabled={isRecording}
-              />
-              <span className="slider"></span>
-            </label>
+
+            {/* Lecturer Overlay Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F7', padding: '1.2rem', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <User size={20} color="var(--zoom-blue)" />
+                <span style={{ fontWeight: '700', color: 'var(--zoom-dark)' }}>Lecturer Bubble</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={() => setBubbleType(bubbleType === 'camera' ? 'none' : 'camera')}
+                  style={{ background: bubbleType === 'camera' ? 'var(--zoom-blue)' : 'white', border: '1px solid #ddd', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: bubbleType === 'camera' ? 'white' : '#666' }}
+                  title="Toggle Camera"
+                >
+                  <Camera size={16} />
+                </button>
+                <label style={{ background: bubbleType === 'photo' ? 'var(--zoom-blue)' : 'white', border: '1px solid #ddd', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: bubbleType === 'photo' ? 'white' : '#666' }} title="Upload Photo">
+                  <Image size={16} />
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                </label>
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: '1rem' }}>
@@ -167,7 +202,7 @@ const ScreenRecorder = ({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '3rem', maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
            <div>
               <h3 style={{ color: 'var(--zoom-blue)', marginBottom: '1rem' }}>01. Setup</h3>
-              <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>Name your session and choose if you want to include system audio.</p>
+              <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>Name your session and choose if you want to include system audio or the Lecturer Bubble.</p>
            </div>
            <div>
               <h3 style={{ color: 'var(--zoom-blue)', marginBottom: '1rem' }}>02. Window Selection</h3>
