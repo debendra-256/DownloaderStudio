@@ -7,11 +7,64 @@ const Downloader = ({
   transcription, downloadPdf, handleExportZip, targetLanguage, setTargetLanguage,
   handleTranscribe, studyNote, aiNote, handleCreateStudyNote, voiceConfig, 
   setVoiceConfig, customVoices, handlePreviewVoice, handleCreateAudio, 
-  cloneName, setCloneName, setCloneAudioFile, handleCloneVoice, generatedAudio
+  cloneName, setCloneName, setCloneAudioFile, handleCloneVoice, generatedAudio,
+  handleInstallApp, isInstallAvailable
 }) => {
   return (
     <div className="downloader-page animate-premium">
       <header className="hero">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '3rem' }}>
+          <div style={{ 
+            background: 'rgba(2, 119, 189, 0.05)', 
+            padding: '1.5rem 3rem', 
+            borderRadius: '24px', 
+            border: '1px solid rgba(2, 119, 189, 0.1)',
+            textAlign: 'center',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <h3 style={{ fontSize: '1rem', color: '#0277bd', marginBottom: '1rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Premium Desktop Experience
+            </h3>
+            <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
+              <button 
+                className="install-link-premium" 
+                onClick={handleInstallApp}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#1e293b', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  fontWeight: '600',
+                  fontSize: '0.95rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Google_Chrome_icon_%282022%29.svg" width="20" alt="chrome" />
+                Download Chrome App
+              </button>
+              <div style={{ width: '1px', background: '#e2e8f0' }}></div>
+              <a 
+                href="/DownloaderStudioSetup.exe" 
+                className="install-link-premium"
+                style={{ 
+                  textDecoration: 'none',
+                  color: '#1e293b', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  fontWeight: '600',
+                  fontSize: '0.95rem'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0078d7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="12" y1="2" x2="12" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+                Download Windows EXE
+              </a>
+            </div>
+          </div>
+        </div>
         <h1 style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>Ultimate <span className="highlight">Media Downloader</span></h1>
         <p className="hero-subtitle" style={{ fontSize: '1.2rem', color: '#64748b' }}>Download high-quality content from your favorite platforms instantly.</p>
         

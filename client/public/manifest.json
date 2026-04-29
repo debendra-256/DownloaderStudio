@@ -1,0 +1,17 @@
+{
+  "name": "Downloader Studio",
+  "short_name": "Downloader",
+  "description": "Premium AI-powered media downloader and utility studio.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0277bd",
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

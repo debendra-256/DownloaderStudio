@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import JSZip from 'jszip';
 import { jsPDF } from "jspdf";
 import saveAs from 'file-saver';
@@ -43,6 +43,40 @@ function App() {
   const [mediaType, setMediaType] = useState(null); // 'audio' or 'video'
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      alert("Installation is not available. This might be because the app is already installed or your browser doesn't support it.");
+      return;
+    }
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+    // We've used the prompt, and can't use it again
+    setDeferredPrompt(null);
+  };
 
   const handleLoadMedia = async (type) => {
     if (!url) return;
@@ -485,6 +519,8 @@ function App() {
         startRecording={startRecording}
         stopRecording={stopRecording}
         formatSize={formatSize}
+        handleInstallApp={handleInstallApp}
+        isInstallAvailable={!!deferredPrompt}
       />
     </Router>
   );
@@ -503,7 +539,8 @@ function AppContent({
   mediaType, setMediaType, handleLoadMedia, handleDownloadFormat, 
   handleDownloadAudioOriginal, handleTranscribe, handleCreateStudyNote, 
   handleCreateAudio, handleCloneVoice, handlePreviewVoice, 
-  downloadPdf, handleExportZip, startRecording, stopRecording, formatSize
+  downloadPdf, handleExportZip, startRecording, stopRecording, formatSize,
+  handleInstallApp, isInstallAvailable
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -619,7 +656,10 @@ function AppContent({
               customVoices={customVoices} handlePreviewVoice={handlePreviewVoice}
               handleCreateAudio={handleCreateAudio} cloneName={cloneName}
               setCloneName={setCloneName} setCloneAudioFile={setCloneAudioFile}
-              handleCloneVoice={handleCloneVoice} generatedAudio={generatedAudio}
+              handleCloneVoice={handleCloneVoice} 
+              generatedAudio={generatedAudio}
+              handleInstallApp={handleInstallApp}
+              isInstallAvailable={isInstallAvailable}
             />
           } />
           <Route path="/screen-recorder" element={
