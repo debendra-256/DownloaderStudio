@@ -33,10 +33,20 @@ const Meeting = () => {
   const [meetingId, setMeetingId] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
   const [virtualBg, setVirtualBg] = useState('none');
+  const [isMinimized, setIsMinimized] = useState(false);
+  
+  const [stream, setStream] = useState(null);
   
   const localVideoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
+
+  // Attach stream when isJoined or stream changes
+  useEffect(() => {
+    if (isJoined && stream && localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+  }, [isJoined, stream]);
 
   // Generate a random meeting ID
   useEffect(() => {
@@ -46,10 +56,8 @@ const Meeting = () => {
 
   const handleJoin = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
+      const userStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setStream(userStream);
       setIsJoined(true);
     } catch (err) {
       console.error("Error accessing media devices:", err);
@@ -58,7 +66,6 @@ const Meeting = () => {
   };
 
   const toggleMic = () => {
-    const stream = localVideoRef.current.srcObject;
     if (stream) {
       stream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
       setIsMuted(!isMuted);
@@ -66,7 +73,6 @@ const Meeting = () => {
   };
 
   const toggleCamera = () => {
-    const stream = localVideoRef.current.srcObject;
     if (stream) {
       stream.getVideoTracks().forEach(track => track.enabled = !track.enabled);
       setIsCameraOff(!isCameraOff);
@@ -78,7 +84,6 @@ const Meeting = () => {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     } else {
-      const stream = localVideoRef.current.srcObject;
       if (!stream) return;
       
       recordedChunksRef.current = [];
@@ -123,29 +128,17 @@ const Meeting = () => {
         <div className="meeting-lobby animate-premium">
           <div className="lobby-content">
              <div className="lobby-video-preview">
-                {!isCameraOff ? (
-                  <div className="camera-placeholder">
-                    <Camera size={64} color="var(--zoom-blue)" />
-                    <p>Camera is starting...</p>
-                  </div>
-                ) : (
-                  <div className="camera-off-msg">Camera is Off</div>
-                )}
+                <Camera size={64} color="var(--zoom-blue)" />
+                <p>Ready to start your meeting?</p>
              </div>
              <div className="lobby-controls">
-                <h1>Ready to Join?</h1>
+                <h1>AI Video Meeting</h1>
                 <p>Meeting ID: <span className="highlight-id">{meetingId}</span></p>
-                <div className="lobby-buttons">
-                   <button className="lobby-btn btn-secondary" onClick={() => setIsCameraOff(!isCameraOff)}>
-                      {isCameraOff ? <VideoOff size={20} /> : <Video size={20} />}
-                   </button>
-                   <button className="lobby-btn btn-secondary" onClick={() => setIsMuted(!isMuted)}>
-                      {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
-                   </button>
-                </div>
                 <button className="join-btn-primary" onClick={handleJoin}>Join Meeting Now</button>
-                <div className="lobby-extra">
-                   <button onClick={() => setShowScheduleModal(true)}><Calendar size={18} /> Schedule for later</button>
+                <div className="lobby-extra" style={{ marginTop: '2rem' }}>
+                   <button onClick={() => setShowScheduleModal(true)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Calendar size={18} /> Schedule for later
+                   </button>
                 </div>
              </div>
           </div>
@@ -161,22 +154,32 @@ const Meeting = () => {
                 </span>
              </div>
              <div className="meeting-top-btns">
-                <button className="header-icon-btn" onClick={() => setShowInviteModal(true)}><Share2 size={18} /></button>
-                <button className="header-icon-btn"><Settings size={18} /></button>
+                <button className="header-icon-btn" onClick={() => setShowInviteModal(true)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}>
+                   <Share2 size={18} />
+                </button>
              </div>
           </header>
 
           <main className="meeting-main">
-             <div className="video-grid">
+             <div className={`video-grid ${isMinimized ? 'minimized' : ''}`}>
                 <div className="video-container primary-video">
                    <video 
                      ref={localVideoRef} 
                      autoPlay 
-                     muted={isMuted} 
+                     muted 
+                     playsInline
                      className={`local-video ${virtualBg !== 'none' ? 'with-filter' : ''}`}
-                     style={{ filter: virtualBg === 'blur' ? 'blur(10px)' : virtualBg === 'grayscale' ? 'grayscale(1)' : 'none' }}
+                     style={{ 
+                       width: '100%', 
+                       height: '100%', 
+                       objectFit: 'cover',
+                       filter: virtualBg === 'blur' ? 'blur(10px)' : virtualBg === 'grayscale' ? 'grayscale(1)' : 'none' 
+                     }}
                    />
                    <div className="video-label">You (Host)</div>
+                   <button className="minimize-toggle" onClick={() => setIsMinimized(!isMinimized)}>
+                      {isMinimized ? <Layout size={16} /> : <Layout size={16} />}
+                   </button>
                 </div>
              </div>
 
