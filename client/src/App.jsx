@@ -5,7 +5,7 @@ import { jsPDF } from "jspdf";
 import saveAs from 'file-saver';
 import * as XLSX from 'xlsx';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, Clock, Download, Image, FileText, ChevronLeft, ChevronRight, HelpCircle, Video, X, Camera, User, Maximize2, Minimize2, Pencil, Eraser, Trash2, Pause, Play, StopCircle, ExternalLink } from 'lucide-react';
+import { ChevronDown, Clock, Download, Image, FileText, ChevronLeft, ChevronRight, HelpCircle, Video, X, Camera, User, Maximize2, Minimize2, Pencil, Eraser, Trash2, Pause, Play, StopCircle, ExternalLink, Smile, Flower2, Sparkles } from 'lucide-react';
 import Meeting from './Meeting';
 import Dashboard, { TOOLS } from './Dashboard';
 import Downloader from './Downloader';
@@ -50,13 +50,16 @@ function App() {
   const [selectionArea, setSelectionArea] = useState(null); // {x, y, w, h}
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [bubbleType, setBubbleType] = useState('none'); // 'none', 'camera', 'photo'
-  const [bubblePos, setBubblePos] = useState({ x: 20, y: 20 });
+  const [bubblePos, setBubblePos] = useState({ x: 20, y: 10 });
   const [isDraggingBubble, setIsDraggingBubble] = useState(false);
   const [photoUrl, setPhotoUrl] = useState('');
   const [isMaximized, setIsMaximized] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isPipActive, setIsPipActive] = useState(false);
+  const [virtualBg, setVirtualBg] = useState('none'); // 'none', 'blur', 'grayscale', 'sepia', 'color', 'image'
+  const [virtualBgColor, setVirtualBgColor] = useState('#000000');
+  const [virtualBgImage, setVirtualBgImage] = useState(null);
   const pipWindowRef = useRef(null);
 
   useEffect(() => {
@@ -391,10 +394,55 @@ function App() {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: audioEnabled
+      // High Quality Screen Stream
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: 30, max: 60 } },
+        audio: audioEnabled // This captures system audio
       });
+
+      let finalStream = screenStream;
+
+      // Microphone Capture & Mixing for High Quality Audio
+      if (audioEnabled) {
+        try {
+          const micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              sampleRate: 48000,
+              channelCount: 2
+            }
+          });
+
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const destination = audioContext.createMediaStreamDestination();
+          
+          // Mix system audio (from screen stream) if present
+          if (screenStream.getAudioTracks().length > 0) {
+            const systemSource = audioContext.createMediaStreamSource(new MediaStream([screenStream.getAudioTracks()[0]]));
+            systemSource.connect(destination);
+          }
+          
+          // Mix microphone audio
+          const micSource = audioContext.createMediaStreamSource(micStream);
+          micSource.connect(destination);
+          
+          // Combine mixed audio with screen video
+          finalStream = new MediaStream([
+            ...screenStream.getVideoTracks(),
+            ...destination.stream.getAudioTracks()
+          ]);
+
+          // Keep track of all original tracks to stop them later
+          finalStream.originalTracks = [
+            ...screenStream.getTracks(),
+            ...micStream.getTracks()
+          ];
+        } catch (micErr) {
+          console.warn("Microphone not available, recording with system audio only:", micErr);
+        }
+      }
 
       // Show selection mode if requested
       if (isSelectionMode) {
@@ -417,12 +465,10 @@ function App() {
       // Wait for countdown
       await new Promise(r => setTimeout(r, 3000));
 
-      let finalStream = stream;
-
       // If selection area is defined, use a canvas to crop
       if (selectionArea) {
         const video = document.createElement('video');
-        video.srcObject = stream;
+        video.srcObject = finalStream;
         video.play();
 
         const canvas = document.createElement('canvas');
@@ -438,8 +484,15 @@ function App() {
         };
         requestAnimationFrame(cropLoop);
         finalStream = canvas.captureStream(60); // 60 FPS
-        // Add audio tracks if any
-        stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+        // Add audio tracks from the original mixed stream
+        screenStream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+        if (finalStream.originalTracks) {
+          finalStream.originalTracks.forEach(track => {
+            if (track.kind === 'audio' && !finalStream.getAudioTracks().includes(track)) {
+              finalStream.addTrack(track);
+            }
+          });
+        }
       }
 
       recordedChunksRef.current = [];
@@ -447,7 +500,11 @@ function App() {
         ? 'video/mp4;codecs=h264' 
         : 'video/webm;codecs=vp9,opus';
         
-      const mediaRecorder = new MediaRecorder(finalStream, { mimeType });
+      const mediaRecorder = new MediaRecorder(finalStream, { 
+        mimeType,
+        audioBitsPerSecond: 128000, // High quality audio
+        videoBitsPerSecond: 3000000  // High quality video
+      });
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) recordedChunksRef.current.push(event.data);
@@ -466,7 +523,12 @@ function App() {
         a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
-        stream.getTracks().forEach(track => track.stop());
+        
+        // Stop all tracks (screen and microphone)
+        finalStream.getTracks().forEach(track => track.stop());
+        if (finalStream.originalTracks) {
+          finalStream.originalTracks.forEach(track => track.stop());
+        }
         setIsRecording(false);
         setRecordingName('');
         setSelectionArea(null);
@@ -591,6 +653,12 @@ function App() {
         pipWindowRef.current = pipWindow;
         setIsPipActive(true);
 
+        // Remove default margins/padding in PIP window to eliminate whitespace
+        pipWindow.document.body.style.margin = '0';
+        pipWindow.document.body.style.padding = '0';
+        pipWindow.document.body.style.overflow = 'hidden';
+        pipWindow.document.body.style.backgroundColor = '#000';
+
         // Copy ALL styles to PIP window for premium look
         [...document.styleSheets].forEach((styleSheet) => {
           try {
@@ -693,6 +761,12 @@ function App() {
         togglePip={togglePip}
         isPipActive={isPipActive}
         pipWindow={pipWindowRef.current}
+        virtualBg={virtualBg}
+        setVirtualBg={setVirtualBg}
+        virtualBgColor={virtualBgColor}
+        setVirtualBgColor={setVirtualBgColor}
+        virtualBgImage={virtualBgImage}
+        setVirtualBgImage={setVirtualBgImage}
       />
     </Router>
   );
@@ -702,7 +776,8 @@ const LecturerBubbleContent = ({
   bubbleType, videoRef, photoUrl, isMaximized, setIsMaximized, setBubbleType, 
   isRecording, recordingTime, isPaused, resumeRecording, pauseRecording, stopRecording,
   bubblePos, setBubblePos, isDraggingBubble, setIsDraggingBubble, setDragOffset, dragOffset,
-  togglePip, isPipActive, container
+  togglePip, isPipActive, container, virtualBg,
+  activeEffect, triggerEffect
 }) => {
   
   // Re-attach stream when moving between windows
@@ -752,7 +827,15 @@ const LecturerBubbleContent = ({
           autoPlay 
           muted 
           playsInline 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} 
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            objectFit: 'cover', 
+            transform: 'scaleX(-1)',
+            filter: virtualBg === 'blur' ? 'blur(10px)' : 
+                    virtualBg === 'grayscale' ? 'grayscale(1)' : 
+                    virtualBg === 'sepia' ? 'sepia(1)' : 'none'
+          }} 
         />
       )}
       {bubbleType === 'photo' && photoUrl && (
@@ -762,9 +845,44 @@ const LecturerBubbleContent = ({
           style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
         />
       )}
+
+      {/* Effect Overlays */}
+      {activeEffect === 'congratulations' && (
+        <div className="bubble-effect-overlay congratulations-anim">
+          {['🎊','🎉','✨','🥳','👏','🎊','🎉','✨'].map((e, i) => <span key={i} className={`particle p${i}`}>{e}</span>)}
+        </div>
+      )}
+      {activeEffect === 'flowers' && (
+        <div className="bubble-effect-overlay flowers-anim">
+          {['🌸','🌺','🌻','🌼','🌷','🌸','🌺','🌻'].map((e, i) => <span key={i} className={`particle p${i}`}>{e}</span>)}
+        </div>
+      )}
+      {activeEffect === 'emoji' && (
+        <div className="bubble-effect-overlay emojis-anim">
+          {['👍','❤️','🔥','🙌','⭐','👍','❤️','🔥'].map((e, i) => <span key={i} className={`particle p${i}`}>{e}</span>)}
+        </div>
+      )}
+
+      {/* Bottom Quick Controls - Shown on Hover */}
+      {!isPipActive && (
+        <div className="bubble-quick-controls">
+           <button onClick={() => setBubbleType('none')} title="Stop Camera" className="quick-btn-stop"><X size={14} /></button>
+           <div className="bubble-divider" />
+           {isPaused ? 
+             <button onClick={resumeRecording} title="Resume Recording" className="quick-btn-resume"><Play size={14} fill="currentColor" /></button> :
+             <button onClick={pauseRecording} title="Pause Recording" className="quick-btn-pause"><Pause size={14} fill="currentColor" /></button>
+           }
+           <div className="bubble-divider" />
+           <button onClick={() => triggerEffect('emoji')} title="Reaction" className="quick-btn-effect"><Smile size={14} /></button>
+           <button onClick={() => triggerEffect('flowers')} title="Flowers" className="quick-btn-effect"><Flower2 size={14} /></button>
+           <button onClick={() => triggerEffect('congratulations')} title="Congratulations" className="quick-btn-effect"><Sparkles size={14} /></button>
+        </div>
+      )}
+
       
-      {/* Control Bar Overlay */}
-      <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '10px', zIndex: 10 }}>
+      {/* Control Bar Overlay - Hidden in PiP for clear picture */}
+      {!isPipActive && (
+        <div style={{ position: 'absolute', top: '15px', right: '15px', display: 'flex', gap: '10px', zIndex: 10 }}>
         {!isPipActive && (
           <button 
             onClick={togglePip}
@@ -794,9 +912,10 @@ const LecturerBubbleContent = ({
           <X size={18} />
         </button>
       </div>
+      )}
 
-      {/* Recording Timer & Controls (Only if recording) */}
-      {isRecording && (
+      {/* Recording Timer & Controls (Only if recording and NOT in PiP) */}
+      {isRecording && !isPipActive && (
         <div style={{ position: 'absolute', bottom: isPipActive ? '5px' : '15px', left: isPipActive ? '5px' : '15px', right: isPipActive ? '5px' : '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.6)', padding: isPipActive ? '4px 8px' : '8px 12px', borderRadius: '12px', backdropFilter: 'blur(10px)', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', fontWeight: '800', fontSize: isPipActive ? '0.75rem' : '0.85rem' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isPaused ? '#FFCC00' : '#FF3B30', animation: isPaused ? 'none' : 'pulse 1.5s infinite' }}></div>
@@ -854,7 +973,10 @@ function AppContent({
   isDraggingBubble, setIsDraggingBubble, photoUrl, setPhotoUrl,
   isMaximized, setIsMaximized,
   isPaused, pauseRecording, resumeRecording, recordingTime,
-  togglePip, isPipActive, pipWindow
+  togglePip, isPipActive, pipWindow,
+  virtualBg, setVirtualBg,
+  virtualBgColor, setVirtualBgColor,
+  virtualBgImage, setVirtualBgImage
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -862,14 +984,143 @@ function AppContent({
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const processingRef = useRef(false);
+  const selfieSegmentationRef = useRef(null);
+  const canvasRef = useRef(null);
+  const processedStreamRef = useRef(null);
+  const sourceVideoRef = useRef(null);
+  const bgImageElementRef = useRef(null);
+
+  const [activeEffect, setActiveEffect] = useState(null);
+  const effectTimeoutRef = useRef(null);
+
+  const triggerEffect = (effectType) => {
+    if (effectTimeoutRef.current) clearTimeout(effectTimeoutRef.current);
+    setActiveEffect(effectType);
+    effectTimeoutRef.current = setTimeout(() => {
+      setActiveEffect(null);
+    }, 4000);
+  };
+
+  const initSegmentation = async () => {
+    if (selfieSegmentationRef.current) return;
+
+    await new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js';
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
+
+    const selfieSegmentation = new window.SelfieSegmentation({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`,
+    });
+
+    selfieSegmentation.setOptions({
+      modelSelection: 1,
+      selfieMode: true,
+    });
+
+    selfieSegmentation.onResults((results) => {
+      if (!canvasRef.current || !processingRef.current) return;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      const type = canvas.dataset.bgType;
+
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'destination-over';
+
+      if (type === 'blur') {
+        ctx.filter = 'blur(15px)';
+        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+      } else if (type === 'color') {
+        ctx.fillStyle = canvas.dataset.bgColor || '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else if (type === 'image') {
+        if (bgImageElementRef.current) {
+          ctx.drawImage(bgImageElementRef.current, 0, 0, canvas.width, canvas.height);
+        } else {
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      } else if (type === 'grayscale') {
+        ctx.filter = 'grayscale(1)';
+        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+      } else if (type === 'sepia') {
+        ctx.filter = 'sepia(1)';
+        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+      }
+      ctx.restore();
+    });
+
+    selfieSegmentationRef.current = selfieSegmentation;
+  };
 
   useEffect(() => {
+    let animationFrameId;
+    
+    const processLoop = async () => {
+      if (processingRef.current && sourceVideoRef.current && selfieSegmentationRef.current) {
+        if (sourceVideoRef.current.readyState >= 2) { // HAVE_CURRENT_DATA
+          try {
+            await selfieSegmentationRef.current.send({ image: sourceVideoRef.current });
+          } catch (e) {
+            console.error("Segmentation error:", e);
+          }
+        }
+      }
+      animationFrameId = requestAnimationFrame(processLoop);
+    };
+
     if (bubbleType === 'camera') {
       const startCamera = async () => {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
           streamRef.current = stream;
-          if (videoRef.current) videoRef.current.srcObject = stream;
+          
+          if (['blur', 'color', 'image', 'grayscale', 'sepia'].includes(virtualBg)) {
+            await initSegmentation();
+            
+            if (!canvasRef.current) {
+              const canvas = document.createElement('canvas');
+              canvas.width = 1280; // Higher res for "HD" as requested
+              canvas.height = 720;
+              canvasRef.current = canvas;
+              processedStreamRef.current = canvas.captureStream(30);
+            }
+            
+            canvasRef.current.dataset.bgType = virtualBg;
+            canvasRef.current.dataset.bgColor = virtualBgColor;
+
+            if (virtualBg === 'image' && virtualBgImage) {
+              if (!bgImageElementRef.current) {
+                bgImageElementRef.current = new Image();
+              }
+              bgImageElementRef.current.src = virtualBgImage;
+            }
+            
+            if (!sourceVideoRef.current) {
+              const tempVideo = document.createElement('video');
+              tempVideo.muted = true;
+              tempVideo.playsInline = true;
+              sourceVideoRef.current = tempVideo;
+            }
+            
+            sourceVideoRef.current.srcObject = stream;
+            sourceVideoRef.current.play();
+            
+            processingRef.current = true;
+            if (videoRef.current) videoRef.current.srcObject = processedStreamRef.current;
+            
+            if (!animationFrameId) processLoop();
+          } else {
+            processingRef.current = false;
+            if (videoRef.current) videoRef.current.srcObject = stream;
+          }
         } catch (err) {
           console.error("Camera access error:", err);
           alert("Could not access camera.");
@@ -878,17 +1129,29 @@ function AppContent({
       };
       startCamera();
     } else {
+      processingRef.current = false;
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
+      if (sourceVideoRef.current) {
+        sourceVideoRef.current.srcObject = null;
+      }
     }
-  }, [bubbleType, setBubbleType]);
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [bubbleType, setBubbleType, virtualBg, virtualBgColor, virtualBgImage]);
 
   // Ensure video stream is re-attached on every render if active
   useEffect(() => {
     if (bubbleType === 'camera' && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
-      videoRef.current.srcObject = streamRef.current;
+      if (['blur', 'color', 'image', 'grayscale', 'sepia'].includes(virtualBg)) {
+        videoRef.current.srcObject = processedStreamRef.current;
+      } else {
+        videoRef.current.srcObject = streamRef.current;
+      }
     }
   });
 
@@ -941,6 +1204,9 @@ function AppContent({
           isPipActive={isPipActive}
           pipWindow={pipWindow}
           container={isPipActive && pipWindow ? pipWindow.document.body : null}
+          virtualBg={virtualBg}
+          activeEffect={activeEffect}
+          triggerEffect={triggerEffect}
         />
       )}
 
@@ -1152,6 +1418,16 @@ function AppContent({
               setBubbleType={setBubbleType}
               photoUrl={photoUrl}
               setPhotoUrl={setPhotoUrl}
+              virtualBg={virtualBg}
+              setVirtualBg={setVirtualBg}
+              virtualBgColor={virtualBgColor}
+              setVirtualBgColor={setVirtualBgColor}
+              virtualBgImage={virtualBgImage}
+              setVirtualBgImage={setVirtualBgImage}
+              isPaused={isPaused}
+              pauseRecording={pauseRecording}
+              resumeRecording={resumeRecording}
+              recordingTime={recordingTime}
             />
           } />
           <Route path="/meeting" element={<Meeting />} />
@@ -1260,7 +1536,7 @@ function AppContent({
             <span>Terms of Service</span>
           </div>
         </div>
-      </footer>
+        </footer>
     </div>
   );
 }

@@ -1,11 +1,16 @@
 import React from 'react';
-import { Monitor, Mic, Download, Shield, Zap, CheckCircle, Video, Clock, User, Camera, Image } from 'lucide-react';
+import { Monitor, Mic, MicOff, Download, Camera, Image as ImageIcon, Layers, Play, Pause, Square, Settings, Video } from 'lucide-react';
+import './ScreenRecorder.css';
 
 const ScreenRecorder = ({ 
   isRecording, recordingName, setRecordingName, audioEnabled, 
   setAudioEnabled, startRecording, stopRecording,
   countdown,
-  bubbleType, setBubbleType, photoUrl, setPhotoUrl
+  bubbleType, setBubbleType, photoUrl, setPhotoUrl,
+  virtualBg, setVirtualBg,
+  virtualBgColor, setVirtualBgColor,
+  virtualBgImage, setVirtualBgImage,
+  isPaused, pauseRecording, resumeRecording, recordingTime
 }) => {
 
   const handlePhotoUpload = (e) => {
@@ -16,204 +21,207 @@ const ScreenRecorder = ({
       setBubbleType('photo');
     }
   };
+  
+  const handleBackgroundChange = (bgType) => {
+    setVirtualBg(bgType);
+  };
+
+  const handleBannerUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setVirtualBgImage(url);
+      setVirtualBg('image');
+    }
+  };
 
   return (
-    <div className="recorder-page animate-premium" style={{ background: '#FFFFFF', minHeight: '100vh', position: 'relative' }}>
+    <div className="veed-app-container">
       
-      {/* Countdown Overlay (Triggered from App.jsx after selection) */}
-      {countdown > 0 && (
-        <div style={{ 
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'rgba(0,3,31,0.95)', zIndex: 10000,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column'
-        }}>
-          <div style={{ fontSize: '15rem', fontWeight: '950', color: 'var(--zoom-blue)', animation: 'pulse 1s infinite' }}>
-            {countdown}
-          </div>
-          <p style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700', marginTop: '2rem', letterSpacing: '2px' }}>GET READY TO RECORD...</p>
-        </div>
-      )}
-
-      {/* Premium Hero Section */}
-      <header className="hero" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(11, 92, 255, 0.1)', color: 'var(--zoom-blue)', padding: '6px 16px', borderRadius: '100px', fontSize: '0.85rem', fontWeight: '800', marginBottom: '2rem' }}>
-           <Zap size={14} /> PRO RECORDING SUITE
-        </div>
-        <h1 style={{ fontSize: '3.5rem', fontWeight: '900', color: 'var(--zoom-dark)', marginBottom: '1rem' }}>
-           The Studio <span style={{ color: 'var(--zoom-blue)' }}>Screen Recorder.</span>
-        </h1>
-        <p className="hero-subtitle" style={{ fontSize: '1.2rem', color: 'var(--zoom-gray)' }}>Capture your digital workspace in stunning high-fidelity with zero lag.</p>
-      </header>
-
-      {/* Recorder Panel */}
-      <div className="recorder-panel" style={{ 
-        margin: '0 auto 4rem', 
-        maxWidth: '850px',
-        background: 'white',
-        borderRadius: '32px',
-        border: '1px solid #E2E2E7',
-        boxShadow: '0 30px 80px rgba(0, 3, 31, 0.08)',
-        overflow: 'hidden'
-      }}>
-        <div style={{ background: '#00031F', padding: '1.2rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: isRecording ? '#FF3B30' : '#4CD964', animation: isRecording ? 'pulse 1.5s infinite' : 'none' }}></div>
-            <span style={{ color: 'white', fontWeight: '800', letterSpacing: '1px', fontSize: '0.8rem' }}>
-               {isRecording ? 'LIVE RECORDING' : 'STUDIO READY'}
-            </span>
+      {/* Top Navbar */}
+      <nav className="veed-navbar">
+        <div className="veed-nav-left">
+          <div className="veed-logo">
+             <Video size={24} className="veed-brand-icon" /> <span>Studio Record</span>
           </div>
         </div>
+        <div className="veed-nav-center">
+          <input 
+            type="text" 
+            placeholder="Enter Recording Name" 
+            className="veed-project-name"
+            value={recordingName}
+            onChange={(e) => setRecordingName(e.target.value)}
+            disabled={isRecording}
+          />
+        </div>
+        <div className="veed-nav-right">
+          <button className="veed-btn-outline" onClick={() => window.location.href = '/'}>Cancel</button>
+        </div>
+      </nav>
+
+      {/* Main Content Split */}
+      <div className="veed-workspace">
         
-        <div className="recorder-body" style={{ padding: '3rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <div className="input-group">
-            <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '800', color: 'var(--zoom-dark)', fontSize: '0.85rem' }}>RECORDING NAME</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Marketing Dashboard Walkthrough" 
-              className="pill-input"
-              style={{ width: '100%', maxWidth: 'none', padding: '1rem 1.5rem', borderRadius: '12px' }}
-              value={recordingName}
-              onChange={(e) => setRecordingName(e.target.value)}
-              disabled={isRecording}
-            />
+        {/* Left Sidebar - Settings */}
+        <aside className="veed-sidebar">
+          <div className="veed-sidebar-section">
+            <h3 className="veed-section-title">Layout</h3>
+            <div className="veed-layout-grid">
+              <button 
+                className={`veed-layout-btn ${bubbleType === 'none' ? 'active' : ''}`}
+                onClick={() => setBubbleType('none')}
+                disabled={isRecording}
+              >
+                <Monitor size={24} />
+                <span>Screen</span>
+              </button>
+              <button 
+                className={`veed-layout-btn ${bubbleType === 'camera' ? 'active' : ''}`}
+                onClick={() => setBubbleType('camera')}
+                disabled={isRecording}
+              >
+                <div className="veed-icon-group">
+                  <Monitor size={20} />
+                  <Camera size={14} className="veed-overlay-icon" />
+                </div>
+                <span>Screen & Camera</span>
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            {/* Audio Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F7', padding: '1.2rem', borderRadius: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Mic size={20} color="var(--zoom-blue)" />
-                <span style={{ fontWeight: '700', color: 'var(--zoom-dark)' }}>Audio</span>
+          <div className="veed-sidebar-section">
+            <h3 className="veed-section-title">Audio & Devices</h3>
+            
+            <div className="veed-setting-item">
+              <div className="veed-setting-info">
+                {audioEnabled ? <Mic size={18} /> : <MicOff size={18} color="#f87171" />}
+                <span>Microphone</span>
               </div>
-              <label className="switch-label">
+              <label className="veed-toggle">
                 <input 
                   type="checkbox" 
                   checked={audioEnabled} 
                   onChange={(e) => setAudioEnabled(e.target.checked)}
                   disabled={isRecording}
                 />
-                <span className="slider"></span>
+                <span className="veed-toggle-slider"></span>
               </label>
             </div>
 
-            {/* Lecturer Overlay Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F5F5F7', padding: '1.2rem', borderRadius: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <User size={20} color="var(--zoom-blue)" />
-                <span style={{ fontWeight: '700', color: 'var(--zoom-dark)' }}>Lecturer Bubble</span>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="veed-setting-item">
+               <div className="veed-setting-info">
+                 <ImageIcon size={18} />
+                 <span>Photo Avatar</span>
+               </div>
+               <label className="veed-upload-btn">
+                 Upload
+                 <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} disabled={isRecording} />
+               </label>
+            </div>
+          </div>
+
+          {bubbleType === 'camera' && (
+            <div className="veed-sidebar-section">
+              <h3 className="veed-section-title">Camera Background</h3>
+              <div className="veed-bg-options">
                 <button 
-                  onClick={() => setBubbleType(bubbleType === 'camera' ? 'none' : 'camera')}
-                  style={{ background: bubbleType === 'camera' ? 'var(--zoom-blue)' : 'white', border: '1px solid #ddd', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: bubbleType === 'camera' ? 'white' : '#666' }}
-                  title="Toggle Camera"
+                  className={`veed-bg-btn ${virtualBg === 'none' ? 'active' : ''}`}
+                  onClick={() => handleBackgroundChange('none')}
                 >
-                  <Camera size={16} />
+                  None
                 </button>
-                <label style={{ background: bubbleType === 'photo' ? 'var(--zoom-blue)' : 'white', border: '1px solid #ddd', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: bubbleType === 'photo' ? 'white' : '#666' }} title="Upload Photo">
-                  <Image size={16} />
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                <button 
+                  className={`veed-bg-btn ${virtualBg === 'blur' ? 'active' : ''}`}
+                  onClick={() => handleBackgroundChange('blur')}
+                >
+                  Blur
+                </button>
+                <div className={`veed-bg-btn color-picker-wrap ${virtualBg === 'color' ? 'active' : ''}`}>
+                  <span>Color</span>
+                  <input 
+                    type="color" 
+                    value={virtualBgColor}
+                    onChange={(e) => {
+                      setVirtualBgColor(e.target.value);
+                      setVirtualBg('color');
+                    }}
+                    className="veed-color-input"
+                  />
+                </div>
+                <label className={`veed-bg-btn ${virtualBg === 'image' ? 'active' : ''}`}>
+                  Image
+                  <input type="file" accept="image/*" onChange={handleBannerUpload} style={{ display: 'none' }} />
                 </label>
               </div>
             </div>
-          </div>
+          )}
+        </aside>
 
-          <div style={{ marginTop: '1rem' }}>
-            {!isRecording ? (
-              <button 
-                className="record-btn start" 
-                onClick={startRecording}
-                style={{ width: '100%', padding: '1.5rem', fontSize: '1.2rem', fontWeight: '900', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-              >
-                <Video size={24} /> START RECORDING
-              </button>
-            ) : (
-              <button 
-                className="record-btn stop" 
-                onClick={stopRecording}
-                style={{ width: '100%', padding: '1.5rem', fontSize: '1.2rem', fontWeight: '900', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-              >
-                <Download size={24} /> STOP & EXPORT
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Feature Section Below Recorder: Image Left, Text Right */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto 8rem', padding: '0 2rem' }}>
-         <div style={{ display: 'flex', alignItems: 'center', gap: '5rem', flexWrap: 'wrap' }}>
-            {/* Left: Image */}
-            <div style={{ flex: 1, minWidth: '400px' }}>
-               <img 
-                  src="/images/premium_screen_recorder_hero_1777479416151.png" 
-                  alt="Screen Recorder Studio Preview" 
-                  style={{ width: '100%', borderRadius: '40px', boxShadow: '0 50px 100px rgba(11, 92, 255, 0.15)' }} 
-               />
+        {/* Center Canvas */}
+        <main className="veed-canvas-area">
+          <div className="veed-preview-container">
+            <div className="veed-preview-placeholder">
+              {!isRecording ? (
+                <div className="veed-preview-empty">
+                  <Monitor size={48} className="veed-empty-icon" />
+                  <p>Ready to record your screen</p>
+                </div>
+              ) : (
+                <div className="veed-recording-active">
+                  <div className="veed-pulse-ring"></div>
+                  <span>Recording in progress...</span>
+                </div>
+              )}
             </div>
 
-            {/* Right: Text */}
-            <div style={{ flex: 1, minWidth: '400px', textAlign: 'left' }}>
-               <div style={{ display: 'inline-block', background: 'rgba(11, 92, 255, 0.08)', color: 'var(--zoom-blue)', padding: '4px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', marginBottom: '1.5rem', letterSpacing: '1px' }}>
-                  CORE CAPABILITIES
-               </div>
-               <h2 style={{ fontSize: '2.8rem', fontWeight: '900', color: 'var(--zoom-dark)', marginBottom: '2rem', lineHeight: '1.2' }}>
-                  Professional Grade <span style={{ color: 'var(--zoom-blue)' }}>Capture.</span>
-               </h2>
-               
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-                  <div style={{ display: 'flex', gap: '1.5rem' }}>
-                     <div style={{ background: '#F5F5F7', padding: '1rem', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'fit-content' }}>
-                        <Zap size={24} color="var(--zoom-blue)" />
-                     </div>
-                     <div>
-                        <h4 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem' }}>Cloud-Native Intelligence</h4>
-                        <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>Zero installation required. Record directly from your browser with hardware-accelerated processing for zero lag.</p>
-                     </div>
-                  </div>
+            {/* Floating Controls */}
+            <div className="veed-floating-controls">
+              {isRecording && (
+                <div className="veed-timer-display">
+                  <div className="veed-red-dot"></div>
+                  {recordingTime || '00:00'}
+                </div>
+              )}
 
-                  <div style={{ display: 'flex', gap: '1.5rem' }}>
-                     <div style={{ background: '#F5F5F7', padding: '1rem', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'fit-content' }}>
-                        <Mic size={24} color="var(--zoom-blue)" />
-                     </div>
-                     <div>
-                        <h4 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem' }}>Multi-Source Audio Mixing</h4>
-                        <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>Seamlessly blend system audio with your microphone input for crystal clear narrations and presentation audio.</p>
-                     </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '1.5rem' }}>
-                     <div style={{ background: '#F5F5F7', padding: '1rem', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'fit-content' }}>
-                        <Shield size={24} color="var(--zoom-blue)" />
-                     </div>
-                     <div>
-                        <h4 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem' }}>Studio-Grade Security</h4>
-                        <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>Your recordings are processed entirely on your local machine. We never see or store your screen data—100% privacy guaranteed.</p>
-                     </div>
-                  </div>
-               </div>
+              <div className="veed-control-actions">
+                {!isRecording ? (
+                  <button className="veed-btn-record-main" onClick={startRecording}>
+                    <div className="veed-record-circle"></div>
+                    Record
+                  </button>
+                ) : (
+                  <>
+                    {isPaused ? (
+                      <button className="veed-control-btn" onClick={resumeRecording} title="Resume">
+                        <Play size={20} />
+                      </button>
+                    ) : (
+                      <button className="veed-control-btn" onClick={pauseRecording} title="Pause">
+                        <Pause size={20} />
+                      </button>
+                    )}
+                    <button className="veed-control-btn veed-btn-stop" onClick={stopRecording} title="Stop & Export">
+                      <Square size={20} fill="currentColor" />
+                      <span>Done</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-         </div>
+          </div>
+        </main>
+
       </div>
 
-      <article className="how-to-use-section" style={{ paddingBottom: '6rem' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '3rem' }}>How it works</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '3rem', maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
-           <div>
-              <h3 style={{ color: 'var(--zoom-blue)', marginBottom: '1rem' }}>01. Setup</h3>
-              <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>Name your session and choose if you want to include system audio or the Lecturer Bubble.</p>
-           </div>
-           <div>
-              <h3 style={{ color: 'var(--zoom-blue)', marginBottom: '1rem' }}>02. Window Selection</h3>
-              <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>Select the specific window or screen you wish to capture via the browser picker.</p>
-           </div>
-           <div>
-              <h3 style={{ color: 'var(--zoom-blue)', marginBottom: '1rem' }}>03. Delay & Capture</h3>
-              <p style={{ color: 'var(--zoom-gray)', lineHeight: '1.6' }}>A 3-second delay starts **after** selection, giving you time to prepare before the recording begins.</p>
-           </div>
+      {/* Full Screen Countdown Overlay */}
+      {countdown > 0 && (
+        <div className="veed-countdown-overlay">
+          <div className="veed-countdown-circle">
+             <span className="veed-countdown-number">{countdown}</span>
+          </div>
         </div>
-      </article>
+      )}
     </div>
   );
 };
