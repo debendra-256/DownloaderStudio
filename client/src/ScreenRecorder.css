@@ -4,27 +4,23 @@
 .veed-app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
-  background-color: #0F1015; /* Veed very dark bg */
-  color: #FFFFFF;
+  min-height: calc(100vh - 80px); /* Adjust for global navbar height */
+  width: 100%;
+  background-color: #05060B;
+  color: #E2E8F0;
   font-family: 'Inter', system-ui, sans-serif;
-  overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 99999; /* Lower than LecturerBubbleContent (100000) so camera is visible */
+  position: relative; /* Remove fixed positioning */
 }
 
 /* Navbar */
 .veed-navbar {
-  height: 60px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
-  background-color: #1A1C23;
-  border-bottom: 1px solid #2B2D35;
+  background-color: #0D0E15;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
 }
 
@@ -60,52 +56,54 @@
 }
 
 .veed-project-name {
-  background: #22242B;
-  border: 1px solid #2B2D35;
+  background: #161822;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #FFF;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   text-align: center;
-  padding: 6px 16px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
   outline: none;
-  transition: all 0.2s;
-  width: 320px; /* Slightly wider */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 320px;
 }
 
 .veed-project-name:hover, .veed-project-name:focus {
   border-color: #3B82F6;
-  background: #2B2D35;
+  background: #1C1F2E;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .veed-btn-outline {
-  background: transparent;
-  border: 1px solid #4B4D56;
-  color: #FFF;
-  padding: 6px 16px;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #D1D5DB;
+  padding: 8px 18px;
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s;
 }
 
 .veed-btn-outline:hover {
-  background: #2B2D35;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Workspace layout */
 .veed-workspace {
   display: flex;
   flex: 1;
-  overflow: hidden;
 }
 
 /* Sidebar */
 .veed-sidebar {
   width: 320px;
-  background-color: #1A1C23;
-  border-right: 1px solid #2B2D35;
+  background-color: #0D0E15;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -135,27 +133,29 @@
 }
 
 .veed-layout-btn {
-  background: #22242B;
-  border: 1px solid #2B2D35;
-  border-radius: 8px;
+  background: #161822;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   padding: 1.2rem 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: #A1A4B5;
+  color: #94A3B8;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .veed-layout-btn:hover {
-  background: #2B2D35;
+  background: #1C1F2E;
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 
 .veed-layout-btn.active {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.15);
   border-color: #3B82F6;
-  color: #3B82F6;
+  color: #FFFFFF;
 }
 
 .veed-icon-group {
@@ -169,13 +169,15 @@
   position: absolute;
   bottom: -4px;
   right: -8px;
-  background: #22242B;
+  background: #161822;
   border-radius: 50%;
   padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .veed-layout-btn.active .veed-overlay-icon {
-  background: #1e293b;
+  background: #3B82F6;
+  border-color: #3B82F6;
 }
 
 /* Settings Items */
@@ -184,10 +186,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: #22242B;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #2B2D35;
+  background: #161822;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s;
+}
+
+.veed-setting-item:hover {
+  background: #1C1F2E;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .veed-setting-info {
@@ -196,7 +204,7 @@
   gap: 12px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #D3E0FF;
+  color: #E2E8F0;
 }
 
 /* Toggle Switch */
@@ -218,7 +226,7 @@
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #4B4D56;
+  background-color: #CBD5E0;
   transition: .3s;
   border-radius: 34px;
 }
@@ -266,11 +274,11 @@
 }
 
 .veed-bg-btn {
-  background: #22242B;
-  border: 1px solid #2B2D35;
-  color: #A1A4B5;
+  background: #161822;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 500;
   text-align: center;
@@ -279,10 +287,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  transition: all 0.2s;
 }
 
 .veed-bg-btn:hover {
-  background: #2B2D35;
+  background: #1C1F2E;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .veed-bg-btn.active {
@@ -313,7 +324,7 @@
 /* Center Canvas */
 .veed-canvas-area {
   flex: 1;
-  background: #0F1015;
+  background: #05060B;
   padding: 2rem;
   display: flex;
   align-items: center;
@@ -325,14 +336,14 @@
   width: 100%;
   max-width: 900px;
   aspect-ratio: 16/9;
-  background: #1A1C23;
-  border-radius: 12px;
-  border: 1px solid #2B2D35;
+  background: #0D0E15;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
 
 .veed-preview-empty {
@@ -382,9 +393,10 @@
 }
 
 .veed-timer-display {
-  background: #1A1C23;
-  border: 1px solid #2B2D35;
-  padding: 10px 16px;
+  background: rgba(13, 14, 21, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 18px;
   border-radius: 100px;
   display: flex;
   align-items: center;
@@ -392,7 +404,8 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   font-size: 1rem;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  color: #FFFFFF;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
 .veed-red-dot {
@@ -409,18 +422,19 @@
 
 .veed-control-actions {
   display: flex;
-  background: #1A1C23;
+  background: rgba(13, 14, 21, 0.8);
+  backdrop-filter: blur(12px);
   padding: 8px;
   border-radius: 100px;
-  border: 1px solid #2B2D35;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
   gap: 8px;
 }
 
 .veed-btn-record-main {
   background: transparent;
   border: none;
-  color: white;
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -442,9 +456,9 @@
 }
 
 .veed-control-btn {
-  background: #22242B;
+  background: rgba(255, 255, 255, 0.05);
   border: none;
-  color: white;
+  color: #CBD5E0;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -452,11 +466,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s;
 }
 
 .veed-control-btn:hover {
-  background: #2B2D35;
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
 }
 
 .veed-btn-stop {
@@ -574,4 +589,173 @@
     font-size: 4rem;
   }
 }
+
+/* --- PREMIUM GUIDE SECTION --- */
+.recorder-guide-section {
+  padding: 8rem 2rem;
+  background: #FFFFFF;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #E2E8F0;
+}
+
+.guide-content-wrapper {
+  max-width: 1200px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.guide-badge {
+  display: inline-block;
+  background: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
+}
+
+.guide-title {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  color: #1A202C;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.guide-intro {
+  font-size: 1.2rem;
+  color: #4A5568;
+  margin-bottom: 3rem;
+  line-height: 1.6;
+}
+
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.guide-step {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.step-num {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #3B82F6;
+  background: rgba(59, 130, 246, 0.1);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.step-info h4 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #2D3748;
+}
+
+.step-info p {
+  color: #718096;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.guide-image-area {
+  position: relative;
+}
+
+.guide-img-card {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.guide-hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.guide-img-card:hover .guide-hero-img {
+  transform: scale(1.05);
+}
+
+.img-overlay-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .guide-content-wrapper {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  .guide-title {
+    font-size: 2.2rem;
+  }
+  .guide-image-area {
+    order: -1;
+  }
+}
+
+/* --- MADE IN BHARAT STICKER --- */
+.bharat-sticker {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10000;
+  cursor: default;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.bharat-sticker:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.flag-emoji {
+  font-size: 1.2rem;
+}
+
+.bharat-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
 

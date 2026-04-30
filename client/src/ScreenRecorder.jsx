@@ -38,33 +38,34 @@ const ScreenRecorder = ({
   return (
     <div className="veed-app-container">
       
-      {/* Top Navbar */}
-      <nav className="veed-navbar">
-        <div className="veed-nav-left">
-          <div className="veed-logo">
-             <Video size={24} className="veed-brand-icon" /> <span>Studio Record</span>
-          </div>
-        </div>
-        <div className="veed-nav-center">
-          <input 
-            type="text" 
-            placeholder="Enter Recording Name" 
-            className="veed-project-name"
-            value={recordingName}
-            onChange={(e) => setRecordingName(e.target.value)}
-            disabled={isRecording}
-          />
-        </div>
-        <div className="veed-nav-right">
-          <button className="veed-btn-outline" onClick={() => window.location.href = '/'}>Cancel</button>
-        </div>
-      </nav>
+      {/* Removed Internal Navbar to use Global Header/Footer */}
 
       {/* Main Content Split */}
       <div className="veed-workspace">
         
         {/* Left Sidebar - Settings */}
         <aside className="veed-sidebar">
+          <div className="veed-sidebar-section">
+            <h3 className="veed-section-title">Recording Details</h3>
+            <input 
+              type="text" 
+              placeholder="Recording Title..." 
+              className="veed-project-name-sidebar"
+              value={recordingName}
+              onChange={(e) => setRecordingName(e.target.value)}
+              disabled={isRecording}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                background: '#161822',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                color: 'white',
+                marginBottom: '1rem',
+                outline: 'none'
+              }}
+            />
+          </div>
           <div className="veed-sidebar-section">
             <h3 className="veed-section-title">Layout</h3>
             <div className="veed-layout-grid">
@@ -211,8 +212,53 @@ const ScreenRecorder = ({
             </div>
           </div>
         </main>
-
       </div>
+
+      {/* Premium Guide Section (Blog Style) */}
+      <section className="recorder-guide-section">
+        <div className="guide-content-wrapper">
+          <div className="guide-text-area">
+            <span className="guide-badge">PRO TUTORIAL</span>
+            <h2 className="guide-title">Master the Art of <span className="text-gradient">Professional Recording</span></h2>
+            <p className="guide-intro">
+              Whether you're creating a lecture, a product demo, or a quick update, our Studio Recorder 
+              provides the cinematic tools you need to stand out.
+            </p>
+            
+            <div className="guide-steps">
+              <div className="guide-step">
+                <div className="step-num">01</div>
+                <div className="step-info">
+                  <h4>Configure Your Workspace</h4>
+                  <p>Choose your layout from the left sidebar. Use 'Screen & Camera' to stay visible and build trust with your audience.</p>
+                </div>
+              </div>
+              <div className="guide-step">
+                <div className="step-num">02</div>
+                <div className="step-info">
+                  <h4>Studio-Grade Audio</h4>
+                  <p>Our noise-suppression engine automatically cleans up background hum. Make sure your mic is toggled 'ON' for maximum impact.</p>
+                </div>
+              </div>
+              <div className="guide-step">
+                <div className="step-num">03</div>
+                <div className="step-info">
+                  <h4>Engage with Reactions</h4>
+                  <p>Bring your presentations to life. Hover over your camera bubble to trigger festive emojis, flowers, or celebration effects.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="guide-image-area">
+            <div className="guide-img-card">
+              <img src="/indian_girl_recorder.png" alt="Indian creator using the Studio Recorder" className="guide-hero-img" />
+              <div className="img-overlay-glow"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Removed floating sticker as per request to keep it in footer */}
 
       {/* Full Screen Countdown Overlay */}
       {countdown > 0 && (

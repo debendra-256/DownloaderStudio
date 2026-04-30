@@ -1528,12 +1528,30 @@ function AppContent({
             </ul>
           </div>
         </div>
-        <div className="footer-bottom">
-          <div>© 2026 Downloader Studio. All rights reserved.</div>
-          <div style={{ display: 'flex', gap: '2rem' }}>
-            <span>English</span>
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
+        <div className="footer-bottom" style={{ flexDirection: 'column', gap: '1.5rem', padding: '3rem 0' }}>
+          <div className="bharat-badge" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            background: 'rgba(255,255,255,0.03)', 
+            padding: '8px 24px', 
+            borderRadius: '100px', 
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+          }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: '900', letterSpacing: '1px' }}>
+              <span style={{ color: '#FF4D00' }}>MADE</span> 
+              <span style={{ color: '#FFFFFF', margin: '0 6px' }}>IN</span> 
+              <span style={{ color: '#2E7D32' }}>BHARAT</span>
+            </span>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', opacity: '0.6', fontSize: '0.9rem' }}>
+            <div>© 2026 Downloader Studio. All rights reserved.</div>
+            <div style={{ display: 'flex', gap: '2rem' }}>
+              <span>English</span>
+              <span>Privacy Policy</span>
+              <span>Terms of Service</span>
+            </div>
           </div>
         </div>
         </footer>
