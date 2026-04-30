@@ -61,7 +61,6 @@ function App() {
   const [virtualBgColor, setVirtualBgColor] = useState('#000000');
   const [virtualBgImage, setVirtualBgImage] = useState(null);
   const pipWindowRef = useRef(null);
-
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
       // Prevent the mini-infobar from appearing on mobile
@@ -980,6 +979,32 @@ function AppContent({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleToolSelection = (toolId) => {
+    switch (toolId) {
+      case 'downloader': navigate('/downloader'); break;
+      case 'notes-from-v': navigate('/ai-notes'); break;
+      case 'screen-rec': navigate('/screen-recorder'); break;
+      case 'qr-gen': navigate('/qr-generator'); break;
+      case 'add-watermark': navigate('/watermark'); break;
+      case 'emi-calc': navigate('/emi-calculator'); break;
+      case 'v-to-mp3': navigate('/video-to-mp3'); break;
+      case 'img-compress': navigate('/img-compressor'); break;
+      case 'meeting': navigate('/meeting'); break;
+      // Handle remaining tools with a consistent alert for now
+      case 'age-calc':
+      case 'pdf-editor':
+      case 'watermark-rem':
+      case 'url-shortener':
+      case 'merge-pdf':
+      case 'split-pdf':
+        alert(`Launching ${toolId.replace('-', ' ')}... This premium tool is coming soon to your AI Workspace!`);
+        break;
+      default: 
+        alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
+    }
+  };
+
   const currentPage = location.pathname === '/' ? 'dashboard' : location.pathname.substring(1);
 
   const videoRef = useRef(null);
@@ -1282,18 +1307,7 @@ function AppContent({
             <>
               <div style={{ background: '#FFFFFF', padding: '0 2rem 4rem' }}>
                 <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                  <Dashboard onSelectTool={(toolId) => {
-                    if (toolId === 'downloader') navigate('/downloader');
-                    else if (toolId === 'notes-from-v') navigate('/ai-notes');
-                    else if (toolId === 'screen-rec') navigate('/screen-recorder');
-                    else if (toolId === 'qr-gen') navigate('/qr-generator');
-                    else if (toolId === 'add-watermark') navigate('/watermark');
-                    else if (toolId === 'emi-calc') navigate('/emi-calculator');
-                    else if (toolId === 'v-to-mp3') navigate('/video-to-mp3');
-                    else if (toolId === 'img-compress') navigate('/img-compressor');
-                    else if (toolId === 'meeting') navigate('/meeting');
-                    else alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
-                  }} />
+                  <Dashboard onSelectTool={handleToolSelection} />
 
                   {/* Premium Vertical Feature Sections */}
                   <div style={{ marginTop: '10rem' }}>
@@ -1369,18 +1383,7 @@ function AppContent({
             </>
           } />
           <Route path="/tools" element={
-            <Dashboard onSelectTool={(toolId) => {
-              if (toolId === 'downloader') navigate('/home');
-              else if (toolId === 'notes-from-v') navigate('/ai-notes');
-              else if (toolId === 'screen-rec') navigate('/screen-recorder');
-              else if (toolId === 'qr-gen') navigate('/qr-generator');
-              else if (toolId === 'add-watermark') navigate('/watermark');
-              else if (toolId === 'emi-calc') navigate('/emi-calculator');
-              else if (toolId === 'v-to-mp3') navigate('/video-to-mp3');
-              else if (toolId === 'img-compress') navigate('/img-compressor');
-              else if (toolId === 'meeting') navigate('/meeting');
-              else alert(`Launching ${toolId}... (Logic for this tool will be added soon)`);
-            }} />
+            <Dashboard onSelectTool={handleToolSelection} />
           } />
           <Route path="/downloader" element={
             <Downloader
